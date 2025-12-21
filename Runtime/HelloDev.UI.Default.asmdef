@@ -4,7 +4,7 @@
     "references": [
         "Unity.TextMeshPro",
         "HelloDev.Utils",
-        "DOTween.Modules"
+        "PrimeTween.Runtime"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

@@ -1,7 +1,7 @@
 using System;
+using HelloDev.Tweening;
 using UnityEngine;
 using UnityEngine.Events;
-using DG.Tweening;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
 
@@ -37,8 +37,8 @@ namespace HelloDev.UI.Default
 
         [Header("Animation Settings")] [SerializeField] private float openDuration = 0.3f;
         [SerializeField] private float hideDuration = 0.3f;
-        public Ease openEase = Ease.OutQuad;
-        public Ease hideEase = Ease.InQuad;
+        public EaseType openEase = EaseType.OutQuad;
+        public EaseType hideEase = EaseType.InQuad;
         [SerializeField] bool unscaledTime = false;
 
         [Header("Interaction Settings")] public bool disableInteractionsWhenHidden = true;
@@ -60,7 +60,7 @@ namespace HelloDev.UI.Default
         private Canvas canvas;
         public CanvasGroup CanvasGroup => canvasGroup ??= GetComponent<CanvasGroup>();
         private CanvasGroup canvasGroup;
-        private Tween fadeTween;
+        private ITweenHandle fadeTween;
 
         // Flag to track animation in progress
         private bool animationInProgress = false;
@@ -257,8 +257,9 @@ namespace HelloDev.UI.Default
 
             if (invokeCallbacks) onStartShow?.Invoke();
             // Start fade in animation
-            fadeTween = CanvasGroup.DOFade(1f, openDuration)
+            fadeTween = TweenService.Provider.Fade(CanvasGroup, 1f, openDuration)
                 .SetEase(openEase)
+                .SetUpdate(unscaledTime)
                 .OnComplete(() =>
                 {
                     animationInProgress = false;
@@ -278,7 +279,7 @@ namespace HelloDev.UI.Default
                         hasPendingHide = false;
                         Hide(true, invokeCallbacks);
                     }
-                }).SetUpdate(unscaledTime);
+                });
         }
 
         public void Hide(bool fromGroup = false, bool invokeCallbacks = true)
@@ -326,8 +327,9 @@ namespace HelloDev.UI.Default
 
             if (invokeCallbacks) onStartHide?.Invoke();
             // Start fade out animation
-            fadeTween = CanvasGroup.DOFade(0f, hideDuration)
+            fadeTween = TweenService.Provider.Fade(CanvasGroup, 0f, hideDuration)
                 .SetEase(hideEase)
+                .SetUpdate(unscaledTime)
                 .OnComplete(() =>
                 {
                     animationInProgress = false;
@@ -357,14 +359,14 @@ namespace HelloDev.UI.Default
                         hasPendingShow = false;
                         pendingShowCallback = null;
                     }
-                }).SetUpdate(unscaledTime);
+                });
         }
 
         private void KillAnimation()
         {
-            if (fadeTween != null && fadeTween.IsActive())
+            if (fadeTween != null)
             {
-                fadeTween.Kill(false); // Don't complete the tween
+                fadeTween.Kill();
                 fadeTween = null;
             }
 

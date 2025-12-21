@@ -82,9 +82,9 @@ public class MyButton : MonoBehaviour
 ### Required
 - com.hellodev.utils
 - com.unity.textmeshpro
+- PrimeTween (for container animations via ITweenProvider)
 
 ### Optional
-- DOTween (for container animations)
 - Odin Inspector (for enhanced inspector)
 
 ## License
