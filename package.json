@@ -1,0 +1,26 @@
+{
+    "name": "com.hellodev.ui",
+    "version": "1.0.0",
+    "displayName": "HelloDev UI",
+    "description": "A modular UI system for Unity games. Provides container-based UI management, custom selectables, and styling components.",
+    "unity": "6000.0",
+    "documentationUrl": "",
+    "changelogUrl": "",
+    "licensesUrl": "",
+    "keywords": [
+        "ui",
+        "containers",
+        "selectables",
+        "buttons",
+        "toggles"
+    ],
+    "author": {
+        "name": "HelloDev",
+        "email": "",
+        "url": ""
+    },
+    "dependencies": {
+        "com.hellodev.utils": "1.0.0",
+        "com.unity.textmeshpro": "3.0.0"
+    }
+}
