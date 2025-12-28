@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using HelloDev.Tweening;
 using UnityEngine;
 using UnityEngine.Events;
@@ -7,12 +8,71 @@ using UnityEngine.EventSystems;
 
 namespace HelloDev.UI.Default
 {
+    /// <summary>
+    /// Base container for UI panels with show/hide animations and navigation support.
+    ///
+    /// Navigation:
+    /// - Unity's built-in navigation handles Up/Down/Left/Right between selectables
+    /// - This class handles panel-level navigation (Cancel/Back to parent panel)
+    /// - Set up Navigation mode on selectables (Automatic or Explicit) for within-panel nav
+    /// </summary>
     [RequireComponent(typeof(Canvas))]
     [RequireComponent(typeof(CanvasGroup))]
     [RequireComponent(typeof(GraphicRaycaster))]
     public class UIContainer : MonoBehaviour
     {
-        public string ID; // Unique identifier for this container
+        #region Static Panel Registry
+
+        private static readonly List<UIContainer> _activeContainers = new();
+
+        /// <summary>
+        /// All currently active (visible) containers.
+        /// </summary>
+        public static IReadOnlyList<UIContainer> ActiveContainers => _activeContainers;
+
+        /// <summary>
+        /// Finds the most specific (innermost) container that owns the currently selected GameObject.
+        /// When containers are nested, returns the deepest one containing the selection.
+        /// </summary>
+        public static UIContainer GetContainerForSelection()
+        {
+            if (EventSystem.current == null) return null;
+            var selected = EventSystem.current.currentSelectedGameObject;
+            if (selected == null) return null;
+
+            UIContainer bestMatch = null;
+            int bestDepth = -1;
+
+            foreach (var container in _activeContainers)
+            {
+                if (selected.transform.IsChildOf(container.transform))
+                {
+                    // Count depth - deeper containers have more parents
+                    int depth = GetTransformDepth(container.transform);
+                    if (depth > bestDepth)
+                    {
+                        bestDepth = depth;
+                        bestMatch = container;
+                    }
+                }
+            }
+            return bestMatch;
+        }
+
+        private static int GetTransformDepth(Transform t)
+        {
+            int depth = 0;
+            while (t.parent != null)
+            {
+                depth++;
+                t = t.parent;
+            }
+            return depth;
+        }
+
+        #endregion
+
+        public string ID;
 
 #if UNITY_EDITOR
         private void OnValidate()
@@ -30,46 +90,71 @@ namespace HelloDev.UI.Default
             InstaHide
         }
 
-        [Header("Navigation")] [SerializeField]
-        UIButton backButton;
+        [Header("Navigation")]
+        [Tooltip("Button that triggers Cancel/Back behavior")]
+        [SerializeField] private UIButton backButton;
 
-        [Header("Start Action")] public StartAction onStartAction = StartAction.DoNothing;
+        [Tooltip("Container to focus when Cancel/Back is pressed (null = hide this container)")]
+        [SerializeField] private UIContainer parentContainer;
 
-        [Header("Animation Settings")] [SerializeField] private float openDuration = 0.3f;
+        [Header("Start Action")]
+        public StartAction onStartAction = StartAction.DoNothing;
+
+        [Header("Animation Settings")]
+        [SerializeField] private float openDuration = 0.3f;
         [SerializeField] private float hideDuration = 0.3f;
         public EaseType openEase = EaseType.OutQuad;
         public EaseType hideEase = EaseType.InQuad;
-        [SerializeField] bool unscaledTime = false;
+        [SerializeField] private bool unscaledTime = false;
 
-        [Header("Interaction Settings")] public bool disableInteractionsWhenHidden = true;
+        [Header("Interaction Settings")]
+        public bool disableInteractionsWhenHidden = true;
 
-        [Header("Auto-Select Settings")] public Selectable autoSelectable;
+        [Header("Auto-Select Settings")]
+        [Tooltip("Selectable to focus when this container is shown")]
+        public Selectable autoSelectable;
 
-        [Header("Close")] [SerializeField] private UIButton[] closeButtons;
-        [Header("Debug")] [SerializeField] internal bool debug = false;
+        [Tooltip("Remember last selected element and restore on re-show")]
+        [SerializeField] private bool rememberSelection = true;
 
-        [Header("Callbacks")] public UnityEvent onShow;
+        [Header("Close")]
+        [SerializeField] private UIButton[] closeButtons;
+
+        [Header("Debug")]
+        [SerializeField] internal bool debug = false;
+
+        [Header("Callbacks")]
+        public UnityEvent onShow;
         public UnityEvent onHide;
         public UnityEvent onStartHide;
         public UnityEvent onStartShow;
 
+        #region Properties
+
         public float OpenDuration => openDuration;
         public float HideDuration => hideDuration;
         public UIContainerGroup Group { get; private set; }
+        public UIContainer ParentContainer => parentContainer;
+
         public Canvas Canvas => canvas ??= GetComponent<Canvas>();
         private Canvas canvas;
+
         public CanvasGroup CanvasGroup => canvasGroup ??= GetComponent<CanvasGroup>();
         private CanvasGroup canvasGroup;
+
+        #endregion
+
+        #region Private Fields
+
         private ITweenHandle fadeTween;
-
-        // Flag to track animation in progress
         private bool animationInProgress = false;
-
-        // Flag for pending actions
         private bool hasPendingShow = false;
         private bool hasPendingHide = false;
         private bool pendingInstant = false;
         private Action pendingShowCallback = null;
+        private GameObject _lastSelectedObject;
+
+        #endregion
 
         protected virtual void Awake()
         {
@@ -78,13 +163,16 @@ namespace HelloDev.UI.Default
 
             foreach (var btn in closeButtons)
             {
-                btn.OnClick.AddListener(() => Hide());
+                if (btn != null)
+                    btn.OnClick.AddListener(() => Hide());
             }
+
+            if (backButton != null)
+                backButton.OnClick.AddListener(HandleBack);
         }
 
         protected virtual void Start()
         {
-            // Apply initial state
             switch (onStartAction)
             {
                 case StartAction.InstaHide: InstaHide(); break;
@@ -94,12 +182,16 @@ namespace HelloDev.UI.Default
             }
         }
 
+        protected virtual void OnDestroy()
+        {
+            _activeContainers.Remove(this);
+            KillAnimation();
+        }
+
         public void InstaHide(bool fromGroup = false, bool invokeCallbacks = true)
         {
-            // Cancel any pending animations
             KillAnimation();
 
-            // If we're already hidden and callbacks aren't needed, skip
             if (!gameObject.activeSelf && !invokeCallbacks)
                 return;
 
@@ -108,6 +200,12 @@ namespace HelloDev.UI.Default
                 Debug.LogWarning("This container has a group. Use group methods to hide it instead.");
                 return;
             }
+
+            // Remember selection before hiding
+            RememberCurrentSelection();
+
+            // Remove from active containers
+            _activeContainers.Remove(this);
 
             // Apply hidden state
             CanvasGroup.alpha = 0f;
@@ -134,7 +232,6 @@ namespace HelloDev.UI.Default
                 onHide?.Invoke();
             }
 
-            // Clear pending actions
             hasPendingShow = false;
             hasPendingHide = false;
             pendingShowCallback = null;
@@ -161,6 +258,10 @@ namespace HelloDev.UI.Default
             CanvasGroup.alpha = 1f;
             CanvasGroup.interactable = true;
             CanvasGroup.blocksRaycasts = true;
+
+            // Add to active containers
+            if (!_activeContainers.Contains(this))
+                _activeContainers.Add(this);
 
             AutoSelect();
             if (debug && Group != null)
@@ -189,7 +290,7 @@ namespace HelloDev.UI.Default
             // Check if we have a pending show
             if (hasPendingShow)
             {
-                Show(true, true, pendingShowCallback);
+                Show(Group != null, true, pendingShowCallback);
                 hasPendingShow = false;
                 pendingShowCallback = null;
             }
@@ -247,6 +348,10 @@ namespace HelloDev.UI.Default
             CanvasGroup.blocksRaycasts = true;
             CanvasGroup.alpha = 0;
 
+            // Add to active containers immediately (so Cancel works during animation)
+            if (!_activeContainers.Contains(this))
+                _activeContainers.Add(this);
+
             if (debug)
             {
                 if (Group != null)
@@ -277,7 +382,7 @@ namespace HelloDev.UI.Default
                     if (hasPendingHide)
                     {
                         hasPendingHide = false;
-                        Hide(true, invokeCallbacks);
+                        Hide(Group != null, invokeCallbacks);
                     }
                 });
         }
@@ -303,6 +408,12 @@ namespace HelloDev.UI.Default
                 hasPendingHide = true;
                 return;
             }
+
+            // Remember selection before hiding
+            RememberCurrentSelection();
+
+            // Remove from active containers
+            _activeContainers.Remove(this);
 
             // Kill any existing animation
             KillAnimation();
@@ -347,13 +458,14 @@ namespace HelloDev.UI.Default
                     // Check if we received a show request during animation
                     if (hasPendingShow)
                     {
+                        bool isFromGroup = Group != null;
                         if (pendingInstant)
                         {
-                            InstaShow(true, true, pendingShowCallback);
+                            InstaShow(isFromGroup, true, pendingShowCallback);
                         }
                         else
                         {
-                            Show(true, true, pendingShowCallback);
+                            Show(isFromGroup, true, pendingShowCallback);
                         }
 
                         hasPendingShow = false;
@@ -375,9 +487,35 @@ namespace HelloDev.UI.Default
 
         private void AutoSelect()
         {
-            if (autoSelectable != null && EventSystem.current != null)
+            if (EventSystem.current == null) return;
+
+            // First, try to restore remembered selection
+            if (rememberSelection && _lastSelectedObject != null &&
+                _lastSelectedObject.activeInHierarchy &&
+                _lastSelectedObject.transform.IsChildOf(transform))
             {
+                var selectable = _lastSelectedObject.GetComponent<Selectable>();
+                if (selectable != null && selectable.interactable)
+                {
+                    if (debug)
+                        Debug.Log($"<color=green>[UIContainer] ({gameObject.name}) AutoSelect → restoring: {_lastSelectedObject.name}</color>", gameObject);
+
+                    EventSystem.current.SetSelectedGameObject(_lastSelectedObject);
+                    return;
+                }
+            }
+
+            // Fall back to autoSelectable
+            if (autoSelectable != null && autoSelectable.gameObject.activeInHierarchy && autoSelectable.interactable)
+            {
+                if (debug)
+                    Debug.Log($"<color=green>[UIContainer] ({gameObject.name}) AutoSelect → default: {autoSelectable.gameObject.name}</color>", gameObject);
+
                 EventSystem.current.SetSelectedGameObject(autoSelectable.gameObject);
+            }
+            else if (debug)
+            {
+                Debug.Log($"<color=red>[UIContainer] ({gameObject.name}) AutoSelect → no valid selectable found</color>", gameObject);
             }
         }
 
@@ -408,10 +546,86 @@ namespace HelloDev.UI.Default
         public void SetGroup(UIContainerGroup uiContainerGroup)
         {
             Group = uiContainerGroup;
-            if (backButton && Group != null)
+            // Note: Don't add Group.Back() listener here - HandleBack() already handles groups
+            // via Group.Back() call if needed. Adding another listener would cause double calls.
+        }
+
+        #region Navigation
+
+        /// <summary>
+        /// Remembers the currently selected object for restoration when re-shown.
+        /// </summary>
+        private void RememberCurrentSelection()
+        {
+            if (!rememberSelection) return;
+            if (EventSystem.current == null) return;
+
+            var selected = EventSystem.current.currentSelectedGameObject;
+            if (selected != null && selected.transform.IsChildOf(transform))
             {
-                backButton.OnClick.AddListener(() => Group.Back());
+                _lastSelectedObject = selected;
+                if (debug)
+                    Debug.Log($"<color=magenta>[UIContainer] ({gameObject.name}) remembered selection: {selected.name}</color>", gameObject);
             }
         }
+
+        /// <summary>
+        /// Handles the back/cancel action. Uses Group.Back() if in a group,
+        /// otherwise navigates to parent container or hides.
+        /// </summary>
+        public void HandleBack()
+        {
+            if (debug)
+                Debug.Log($"<color=yellow>[UIContainer] ({gameObject.name}) HandleBack called</color>", gameObject);
+
+            // If in a group, delegate to the group's back handling
+            if (Group != null)
+            {
+                if (debug)
+                    Debug.Log($"<color=yellow>[UIContainer] ({gameObject.name}) → delegating to Group.Back()</color>", gameObject);
+
+                Group.Back();
+                return;
+            }
+
+            // Check for valid parent (not null and not self-reference)
+            if (parentContainer != null && parentContainer != this)
+            {
+                if (debug)
+                    Debug.Log($"<color=yellow>[UIContainer] ({gameObject.name}) → navigating to parent: {parentContainer.gameObject.name}</color>", gameObject);
+
+                // Hide first, then show parent (prevents focus conflicts)
+                Hide();
+                parentContainer.Show();
+            }
+            else
+            {
+                if (debug)
+                    Debug.Log($"<color=yellow>[UIContainer] ({gameObject.name}) → no parent, hiding</color>", gameObject);
+
+                // No parent - just hide
+                Hide();
+            }
+        }
+
+        /// <summary>
+        /// Focuses this container programmatically, selecting the appropriate element.
+        /// </summary>
+        public void Focus()
+        {
+            if (!IsVisible())
+            {
+                if (debug)
+                    Debug.Log($"<color=magenta>[UIContainer] ({gameObject.name}) Focus() called but not visible</color>", gameObject);
+                return;
+            }
+
+            if (debug)
+                Debug.Log($"<color=magenta>[UIContainer] ({gameObject.name}) Focus() called</color>", gameObject);
+
+            AutoSelect();
+        }
+
+        #endregion
     }
 }

@@ -4,7 +4,8 @@
     "references": [
         "Unity.TextMeshPro",
         "HelloDev.Utils",
-        "PrimeTween.Runtime"
+        "PrimeTween.Runtime",
+        "Unity.InputSystem"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

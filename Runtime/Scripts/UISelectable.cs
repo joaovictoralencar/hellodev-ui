@@ -129,6 +129,9 @@ namespace HelloDev.UI.Default
         {
             selected = true;
             ChangeState(SelectableState.Selected);
+
+            // Notify UIScroll instances for auto-scroll to selection
+            UIScroll.NotifySelected(gameObject);
         }
 
         public virtual void OnDeselect(BaseEventData eventData)
