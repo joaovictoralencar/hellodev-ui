@@ -71,6 +71,7 @@ namespace HelloDev.UI.Default
         #region Private Fields
 
         private Coroutine _checkFocusCoroutine;
+        private bool _isHandlingToggleChange;
 
         #endregion
 
@@ -151,18 +152,29 @@ namespace HelloDev.UI.Default
 
         private void HandleToggleValueChanged(bool isOn)
         {
-            if (isOn)
-            {
-                OnToggleOn.Invoke();
-                OnShowVisualFeedback.Invoke();
-            }
-            else
-            {
-                OnToggleOff.Invoke();
-                OnHideVisualFeedback.Invoke();
-            }
+            // Guard against re-entry to prevent stack overflow
+            if (_isHandlingToggleChange) return;
 
-            UpdateState();
+            _isHandlingToggleChange = true;
+            try
+            {
+                if (isOn)
+                {
+                    OnToggleOn.Invoke();
+                    OnShowVisualFeedback.Invoke();
+                }
+                else
+                {
+                    OnToggleOff.Invoke();
+                    OnHideVisualFeedback.Invoke();
+                }
+
+                UpdateState();
+            }
+            finally
+            {
+                _isHandlingToggleChange = false;
+            }
         }
 
         #endregion
