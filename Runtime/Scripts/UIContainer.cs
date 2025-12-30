@@ -24,6 +24,7 @@ namespace HelloDev.UI.Default
         #region Static Panel Registry
 
         private static readonly List<UIContainer> _activeContainers = new();
+        private static readonly Dictionary<Transform, int> _depthCache = new();
 
         /// <summary>
         /// All currently active (visible) containers.
@@ -47,8 +48,8 @@ namespace HelloDev.UI.Default
             {
                 if (selected.transform.IsChildOf(container.transform))
                 {
-                    // Count depth - deeper containers have more parents
-                    int depth = GetTransformDepth(container.transform);
+                    // Count depth - deeper containers have more parents (cached)
+                    int depth = GetTransformDepthCached(container.transform);
                     if (depth > bestDepth)
                     {
                         bestDepth = depth;
@@ -59,15 +60,29 @@ namespace HelloDev.UI.Default
             return bestMatch;
         }
 
-        private static int GetTransformDepth(Transform t)
+        private static int GetTransformDepthCached(Transform t)
         {
+            if (_depthCache.TryGetValue(t, out int cachedDepth))
+                return cachedDepth;
+
             int depth = 0;
-            while (t.parent != null)
+            Transform current = t;
+            while (current.parent != null)
             {
                 depth++;
-                t = t.parent;
+                current = current.parent;
             }
+
+            _depthCache[t] = depth;
             return depth;
+        }
+
+        /// <summary>
+        /// Clears the transform depth cache. Called when hierarchy might have changed.
+        /// </summary>
+        public static void ClearDepthCache()
+        {
+            _depthCache.Clear();
         }
 
         #endregion
@@ -185,6 +200,7 @@ namespace HelloDev.UI.Default
         protected virtual void OnDestroy()
         {
             _activeContainers.Remove(this);
+            _depthCache.Remove(transform);
             KillAnimation();
         }
 
