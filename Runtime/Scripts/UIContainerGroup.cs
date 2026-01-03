@@ -1,9 +1,11 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using HelloDev.Logging;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.UI;
+using Logger = HelloDev.Logging.Logger;
 #if ODIN_INSPECTOR
 using Sirenix.OdinInspector;
 #endif
@@ -120,7 +122,7 @@ namespace HelloDev.UI.Default
 
             if (containers.Count == 0)
             {
-                Debug.LogWarning($"No UIContainers found in group {GroupID}.");
+                Logger.LogWarning(LogSystems.UI, $"No UIContainers found in group {GroupID}.");
                 onShow?.Invoke();
                 return;
             }
@@ -139,7 +141,7 @@ namespace HelloDev.UI.Default
                     }
                     else
                     {
-                        Debug.LogWarning($"No enabled UIContainer found in group {GroupID}.");
+                        Logger.LogWarning(LogSystems.UI, $"No enabled UIContainer found in group {GroupID}.");
                         onShow?.Invoke();
                         return;
                     }
@@ -159,7 +161,7 @@ namespace HelloDev.UI.Default
 
             if (containerToShow == null)
             {
-                Debug.LogError($"UIContainer with ID {id} not found in group {GroupID}", gameObject);
+                Logger.LogError(LogSystems.UI, $"UIContainer with ID {id} not found in group {GroupID}");
                 onShow?.Invoke();
                 return;
             }
@@ -228,14 +230,14 @@ namespace HelloDev.UI.Default
         {
             if (container == null)
             {
-                Debug.LogError("Cannot show null container");
+                Logger.LogError(LogSystems.UI, "Cannot show null container");
                 onShow?.Invoke();
                 return;
             }
 
             if (!containers.Contains(container))
             {
-                Debug.LogError($"Container {container.ID} is not part of group {GroupID}");
+                Logger.LogError(LogSystems.UI, $"Container {container.ID} is not part of group {GroupID}");
                 onShow?.Invoke();
                 return;
             }

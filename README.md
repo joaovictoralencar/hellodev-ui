@@ -484,6 +484,10 @@ public class DynamicText : MonoBehaviour
 
 ## Changelog
 
+### v1.0.1 (2026-01-03)
+**Logging:**
+- Replaced Debug.LogWarning with HelloDev.Logging.Logger for consistent logging across HelloDev packages
+
 ### v1.0.0
 - Initial release
 - UIContainer, UIContainerGroup, UIContainerGroupManager

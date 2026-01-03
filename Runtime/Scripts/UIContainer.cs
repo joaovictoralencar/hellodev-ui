@@ -1,10 +1,12 @@
 using System;
 using System.Collections.Generic;
+using HelloDev.Logging;
 using HelloDev.Tweening;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
+using Logger = HelloDev.Logging.Logger;
 
 namespace HelloDev.UI.Default
 {
@@ -213,7 +215,7 @@ namespace HelloDev.UI.Default
 
             if (Group && !fromGroup)
             {
-                Debug.LogWarning("This container has a group. Use group methods to hide it instead.");
+                Logger.LogWarning(LogSystems.UI, "This container has a group. Use group methods to hide it instead.");
                 return;
             }
 
@@ -264,7 +266,7 @@ namespace HelloDev.UI.Default
 
             if (Group && !fromGroup)
             {
-                Debug.LogWarning("This container has a group. Use group methods to show it instead.");
+                Logger.LogWarning(LogSystems.UI, "This container has a group. Use group methods to show it instead.");
                 return;
             }
 
@@ -347,7 +349,7 @@ namespace HelloDev.UI.Default
 
             if (Group && !fromGroup)
             {
-                Debug.LogWarning("This container has a group. Use group methods to show it instead.");
+                Logger.LogWarning(LogSystems.UI, "This container has a group. Use group methods to show it instead.");
                 return;
             }
 
@@ -414,7 +416,7 @@ namespace HelloDev.UI.Default
 
             if (Group && !fromGroup)
             {
-                Debug.LogWarning("This container has a group. Use group methods to hide it instead.");
+                Logger.LogWarning(LogSystems.UI, "This container has a group. Use group methods to hide it instead.");
                 return;
             }
 

@@ -1,6 +1,6 @@
 {
     "name": "com.hellodev.ui",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "displayName": "HelloDev UI",
     "description": "A modular UI system for Unity games. Provides container-based UI management, custom selectables, and styling components.",
     "unity": "6000.0",
