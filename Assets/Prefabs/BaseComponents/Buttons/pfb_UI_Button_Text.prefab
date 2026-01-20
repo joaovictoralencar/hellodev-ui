@@ -134,6 +134,14 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 959364198386912434, guid: b36a5d8692c783943b9020a48f835e4a, type: 3}
+      propertyPath: m_MinWidth
+      value: 120
+      objectReference: {fileID: 0}
+    - target: {fileID: 959364198386912434, guid: b36a5d8692c783943b9020a48f835e4a, type: 3}
+      propertyPath: m_PreferredHeight
+      value: -1
+      objectReference: {fileID: 0}
     - target: {fileID: 2450080204132537643, guid: b36a5d8692c783943b9020a48f835e4a, type: 3}
       propertyPath: m_Pivot.x
       value: 0.5
@@ -248,10 +256,61 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 2450080204132537643, guid: b36a5d8692c783943b9020a48f835e4a, type: 3}
       insertIndex: -1
       addedObject: {fileID: 7430914729690301958}
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 5539837032253638124, guid: b36a5d8692c783943b9020a48f835e4a, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 6875422375575664837}
+    - targetCorrespondingSourceObject: {fileID: 5539837032253638124, guid: b36a5d8692c783943b9020a48f835e4a, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 5316543000955864996}
   m_SourcePrefab: {fileID: 100100000, guid: b36a5d8692c783943b9020a48f835e4a, type: 3}
 --- !u!224 &1880240561277303399 stripped
 RectTransform:
   m_CorrespondingSourceObject: {fileID: 2450080204132537643, guid: b36a5d8692c783943b9020a48f835e4a, type: 3}
   m_PrefabInstance: {fileID: 4041868665530855244}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &8428185775752342176 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 5539837032253638124, guid: b36a5d8692c783943b9020a48f835e4a, type: 3}
+  m_PrefabInstance: {fileID: 4041868665530855244}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &6875422375575664837
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8428185775752342176}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 30649d3a9faa99c48a7b1166b86bf2a0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.HorizontalLayoutGroup
+  m_Padding:
+    m_Left: 15
+    m_Right: 15
+    m_Top: 5
+    m_Bottom: 5
+  m_ChildAlignment: 4
+  m_Spacing: 0
+  m_ChildForceExpandWidth: 0
+  m_ChildForceExpandHeight: 0
+  m_ChildControlWidth: 1
+  m_ChildControlHeight: 1
+  m_ChildScaleWidth: 0
+  m_ChildScaleHeight: 0
+  m_ReverseArrangement: 0
+--- !u!114 &5316543000955864996
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8428185775752342176}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3245ec927659c4140ac4f8d17403cc18, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.ContentSizeFitter
+  m_HorizontalFit: 2
+  m_VerticalFit: 0
