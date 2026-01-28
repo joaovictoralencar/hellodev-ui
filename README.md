@@ -1,6 +1,6 @@
 # HelloDev UI
 
-A modular UI system for Unity games. Provides container-based UI management with animated transitions, navigation stacks, custom selectables with state machines, and styling components.
+A modular UI system for Unity games. Provides container-based UI management with animated transitions, navigation stacks, custom selectables with state machines, popup system, and styling components.
 
 ## Features
 
@@ -10,6 +10,21 @@ A modular UI system for Unity games. Provides container-based UI management with
 - **UIContainerGroupManager** - Top-level manager for multiple container groups
 - Back navigation with automatic history stack
 - Configurable animation easing and duration
+
+### Navigation System
+- **UINavigationInputHandler** - Routes Cancel input (Escape/B button) to containers
+- **Auto-select** - Automatically selects UI elements when containers show
+- **Selection Memory** - Remembers and restores last selected element per container
+- **Parent Container Navigation** - Hierarchical back navigation between containers
+- Works with both keyboard/mouse and gamepad
+
+### Popup System
+- **UIPopupService** - Manages popup queue and lifecycle
+- **UIPopup** - Individual popup instance with buttons
+- **Popup_SO** - ScriptableObject configuration with localization support
+- **PopupRequestEvent** - Event-driven popup requests for decoupled access
+- Queue system for multiple popups
+- Focus save/restore when popups open/close
 
 ### Selectables
 - **UISelectable** - Abstract state machine for interactive UI elements
@@ -40,7 +55,10 @@ A modular UI system for Unity games. Provides container-based UI management with
 
 **Dependencies:**
 - `com.hellodev.utils`
+- `com.hellodev.events` (for popup system)
 - `com.unity.textmeshpro`
+- `com.unity.inputsystem` (for navigation input)
+- `com.unity.localization` (optional, for localized popups)
 - PrimeTween (optional, for smooth animations)
 
 ### 2. Create Your First UI Container
@@ -55,68 +73,24 @@ A modular UI system for Unity games. Provides container-based UI management with
 3. Configure in the inspector:
    - Set a unique `ID` (e.g., "MainMenu")
    - Choose `On Start Action` (Show, Hide, etc.)
+   - Set `Auto Selectable` to the first button
    - Configure animation easing
 
-### 3. Show/Hide Containers in Code
+### 3. Set Up Navigation Input
 
-```csharp
-using HelloDev.UI.Default;
-using UnityEngine;
+1. Create an empty GameObject named `UINavigationHandler`
+2. Add `UINavigationInputHandler` component
+3. Configure input bindings (defaults work for most cases):
+   - Keyboard: Escape
+   - Gamepad: B button (East)
 
-public class MenuController : MonoBehaviour
-{
-    [SerializeField] private UIContainer mainMenu;
-    [SerializeField] private UIContainer settingsMenu;
+### 4. Set Up Popup Service (Optional)
 
-    public void ShowSettings()
-    {
-        mainMenu.Hide();
-        settingsMenu.Show();
-    }
-
-    public void HideSettings()
-    {
-        settingsMenu.Hide();
-        mainMenu.Show();
-    }
-}
-```
-
-### 4. Use Container Groups for Navigation
-
-For multi-screen menus with back navigation:
-
-```csharp
-using HelloDev.UI.Default;
-using UnityEngine;
-
-public class MainMenu : MonoBehaviour
-{
-    [SerializeField] private UIContainerGroup menuGroup;
-
-    public void ShowSettings()
-    {
-        menuGroup.ShowContainer("Settings");  // Pushes to back stack
-    }
-
-    public void ShowCredits()
-    {
-        menuGroup.ShowContainer("Credits");
-    }
-
-    public void GoBack()
-    {
-        menuGroup.Back();  // Returns to previous screen
-    }
-}
-```
-
-## Installation
-
-### Via Package Manager (Local)
-1. Open Unity Package Manager
-2. Click "+" > "Add package from disk"
-3. Navigate to this folder and select `package.json`
+1. Create an empty GameObject named `PopupService`
+2. Add `UIPopupService` component
+3. Create a popup prefab with `UIPopup` component
+4. Assign the prefab to the service
+5. Optionally create a `PopupRequestEvent` asset for decoupled access
 
 ## UI Hierarchy
 
@@ -136,7 +110,139 @@ UIContainerGroupManager
     └── UIContainer (Equipment)
 ```
 
-## Usage
+## Navigation System
+
+The navigation system handles Cancel/Back input and routes it to the appropriate container.
+
+### How It Works
+
+1. **UINavigationInputHandler** listens for Cancel input (Escape/B button)
+2. When triggered, it finds the container that owns the currently selected UI element
+3. The container's `HandleBack()` is called, which either:
+   - Navigates to the parent container (if set)
+   - Calls `Group.Back()` (if in a container group)
+   - Hides the container (if no parent)
+
+### Setting Up Navigation
+
+```csharp
+// In UIContainer inspector:
+// - Back Button: Optional button that triggers HandleBack()
+// - Parent Container: Container to show when going back
+// - Auto Selectable: First element to select when shown
+// - Remember Selection: Restore last selection on re-show
+```
+
+### Container Navigation
+
+```csharp
+using HelloDev.UI.Default;
+
+public class MenuController : MonoBehaviour
+{
+    [SerializeField] private UIContainer settingsMenu;
+    [SerializeField] private UIContainer mainMenu;
+
+    void Start()
+    {
+        // Set up parent relationship
+        // When Back is pressed in settings, it goes to main menu
+        // Configure this in inspector via Parent Container field
+    }
+
+    // HandleBack() is called automatically by UINavigationInputHandler
+    // Or you can call it manually:
+    public void OnBackPressed()
+    {
+        var container = UIContainer.GetContainerForSelection();
+        container?.HandleBack();
+    }
+}
+```
+
+## Popup System
+
+The popup system manages modal dialogs with queuing support.
+
+### Quick Popup (Runtime Strings)
+
+```csharp
+using HelloDev.UI.Popups;
+
+public class GameManager : MonoBehaviour
+{
+    [SerializeField] private UIPopupService popupService;
+
+    public void ShowConfirmation()
+    {
+        popupService.ShowPopup(
+            title: "Confirm Action",
+            message: "Are you sure you want to quit?",
+            buttonLabels: new[] { "Yes", "No" },
+            onResult: buttonIndex =>
+            {
+                if (buttonIndex == 0) // Yes
+                    Application.Quit();
+            }
+        );
+    }
+}
+```
+
+### Configured Popup (ScriptableObject)
+
+1. Create: **Create > HelloDev > UI > Popup**
+2. Configure title, message, icon, and buttons
+3. Use in code:
+
+```csharp
+[SerializeField] private Popup_SO confirmQuitPopup;
+[SerializeField] private UIPopupService popupService;
+
+public void ShowQuitConfirmation()
+{
+    popupService.ShowPopup(confirmQuitPopup, OnQuitResult);
+}
+
+void OnQuitResult(int buttonIndex)
+{
+    if (buttonIndex == 0) // First button
+        Application.Quit();
+}
+```
+
+### Event-Driven Popups (Decoupled)
+
+For systems that shouldn't have direct popup service references:
+
+```csharp
+// Create asset: Create > HelloDev > UI > Events > Popup Request Event
+[SerializeField] private PopupRequestEvent popupRequestEvent;
+
+public void RequestPopup()
+{
+    var request = PopupRequest.Quick(
+        "Alert",
+        "Something happened!",
+        new[] { "OK" }
+    );
+    popupRequestEvent.Raise(request);
+}
+```
+
+### Popup Configuration (Popup_SO)
+
+| Field | Description |
+|-------|-------------|
+| `customPrefab` | Optional custom popup prefab |
+| `title` | Localized title text |
+| `message` | Localized message text |
+| `icon` | Optional popup icon |
+| `buttons` | Array of button configurations |
+| `defaultButtonIndex` | Which button to focus initially |
+| `cancelButtonIndex` | Which button Cancel input triggers (-1 = last) |
+
+## Usage Examples
 
 ### Container Management
 
@@ -200,34 +306,6 @@ public class MainMenu : MonoBehaviour
 }
 ```
 
-### Container Group Manager
-
-For managing multiple groups (e.g., switching between menu and gameplay UI):
-
-```csharp
-using HelloDev.UI.Default;
-
-public class UIManager : MonoBehaviour
-{
-    [SerializeField] private UIContainerGroupManager uiManager;
-
-    public void ShowGameplayUI()
-    {
-        uiManager.ShowContainer("GameplayHUD", "HUD");
-    }
-
-    public void ShowMainMenu()
-    {
-        uiManager.ShowContainer("MainMenu", "Title");
-    }
-
-    public void GoBackGroup()
-    {
-        uiManager.Back();
-    }
-}
-```
-
 ### Custom Buttons with State Events
 
 ```csharp
@@ -284,107 +362,6 @@ public class SettingsPanel : MonoBehaviour
     {
         AudioManager.EnableSFX(isOn);
     }
-
-    // Programmatic control
-    public void SetMusicEnabled(bool enabled)
-    {
-        musicToggle.SetIsOn(enabled);
-    }
-}
-```
-
-### Input Field Usage
-
-```csharp
-using HelloDev.UI.Default;
-using UnityEngine;
-
-public class LoginPanel : MonoBehaviour
-{
-    [SerializeField] private UIInputField usernameField;
-    [SerializeField] private UIInputField passwordField;
-
-    void Start()
-    {
-        usernameField.OnEndEdit.AddListener(OnUsernameEntered);
-        passwordField.OnTextChanged.AddListener(OnPasswordTyping);
-    }
-
-    void OnUsernameEntered(string username)
-    {
-        Debug.Log($"Username: {username}");
-    }
-
-    void OnPasswordTyping(string password)
-    {
-        // Validate password strength in real-time
-    }
-
-    public void ClearFields()
-    {
-        usernameField.SetText("");
-        passwordField.SetText("");
-    }
-}
-```
-
-### Custom Selectable for Lists
-
-```csharp
-using HelloDev.UI.Default;
-using UnityEngine;
-
-public class ListItem : MonoBehaviour
-{
-    [SerializeField] private CustomSelectable selectable;
-
-    public void Select()
-    {
-        selectable.Select();  // Manual selection
-    }
-
-    public void Deselect()
-    {
-        selectable.Deselect();
-    }
-
-    void Start()
-    {
-        selectable.ManualSelectedEvent.AddListener(OnSelected);
-        selectable.ManualDeselectedEvent.AddListener(OnDeselected);
-    }
-
-    void OnSelected() => Debug.Log("Item selected");
-    void OnDeselected() => Debug.Log("Item deselected");
-}
-```
-
-### Text Styling
-
-1. Create a TextStyle_SO: **Create > HelloDev > UI > Text Style**
-2. Configure font size, character spacing, etc.
-3. Add **TextStyleUpdater** component to your TextMeshPro object
-4. Assign the TextStyle_SO reference
-
-```csharp
-using HelloDev.UI.Default;
-using UnityEngine;
-
-public class DynamicText : MonoBehaviour
-{
-    [SerializeField] private TextStyleUpdater textUpdater;
-    [SerializeField] private TextStyle_SO normalStyle;
-    [SerializeField] private TextStyle_SO highlightedStyle;
-
-    public void Highlight()
-    {
-        textUpdater.TextStyleSO = highlightedStyle;  // Auto-applies
-    }
-
-    public void Normal()
-    {
-        textUpdater.TextStyleSO = normalStyle;
-    }
 }
 ```
 
@@ -398,91 +375,82 @@ public class DynamicText : MonoBehaviour
 | `Hide()` | Animated fade out |
 | `InstaShow()` | Instant show (no animation) |
 | `InstaHide()` | Instant hide (no animation) |
-| `SetVisibility(visible, instant)` | Flexible visibility control |
+| `HandleBack()` | Handles Cancel/Back navigation |
+| `Focus()` | Focuses the container and selects appropriate element |
 | `IsVisible()` | Check if currently visible |
 | `IsAnimating()` | Check if animation in progress |
-| `onShow` | Event fired when show completes |
-| `onHide` | Event fired when hide completes |
-| `onStartShow` | Event fired when show starts |
-| `onStartHide` | Event fired when hide starts |
+| `autoSelectable` | Selectable to focus when shown |
+| `ParentContainer` | Container to navigate to on back |
 
-### UIContainerGroup
+### UIContainer (Static)
 | Member | Description |
 |--------|-------------|
-| `GroupID` | Unique identifier for the group |
-| `Containers` | All child containers |
-| `CurrentContainer` | Currently visible container |
-| `ShowContainer(id)` | Show container by ID |
-| `ShowContainer(container)` | Show container by reference |
-| `Back()` | Navigate to previous container |
-| `HideAll()` | Hide all containers |
+| `ActiveContainers` | All currently visible containers |
+| `GetContainerForSelection()` | Gets container owning current selection |
 
-### UIContainerGroupManager
+### UINavigationInputHandler
 | Member | Description |
 |--------|-------------|
-| `ShowContainer(groupId, containerId)` | Show specific container in group |
-| `ShowContainerGroup(group)` | Show entire group |
-| `Back()` | Navigate to previous group |
-| `HideAll()` | Hide all groups |
+| `cancelActionName` | Input action name |
+| `keyboardCancel` | Keyboard binding (default: Escape) |
+| `gamepadCancel` | Gamepad binding (default: B button) |
+| `TriggerCancel()` | Manually trigger cancel |
+| `SetPopupService()` | Set popup service reference |
 
-### UISelectable
+### UIPopupService
 | Member | Description |
 |--------|-------------|
-| `IsInteractable` | Get/set interactability |
-| `SetInteractable(bool)` | Set interactability |
-| `NormalStateEvent` | Event for normal state |
-| `SelectedStateEvent` | Event for selected state |
-| `HighlightedStateEvent` | Event for highlighted state |
-| `PressedStateEvent` | Event for pressed state |
-| `DisabledStateEvent` | Event for disabled state |
-| `ChangedStateEvent` | Event for any state change |
+| `ShowPopup(Popup_SO, callback)` | Show configured popup |
+| `ShowPopup(title, message, buttons, callback)` | Show quick popup |
+| `HandleCancelInput()` | Handle cancel for active popup |
+| `ForceCloseCurrentPopup()` | Force close without callback |
+| `HasActivePopup` | True if popup is showing |
+| `CurrentPopup` | The active popup instance |
 
-### UIButton
+### UIPopup
 | Member | Description |
 |--------|-------------|
-| `OnClick` | Click event (UnityButton.onClick) |
-| `IsInteractable` | Button interactability |
-| `DeselectOnClick` | Auto-deselect after click |
+| `Setup(Popup_SO, callback)` | Configure from ScriptableObject |
+| `Setup(title, message, buttons, callback)` | Configure from strings |
+| `Show()` | Display the popup |
+| `Close(buttonIndex)` | Close with result |
+| `HandleCancel()` | Trigger cancel button |
+| `Container` | The UIContainer component |
 
-### UIToggle
+### PopupRequest
 | Member | Description |
 |--------|-------------|
-| `IsOn` | Toggle state |
-| `SetIsOn(bool)` | Set toggle state |
-| `OnToggleOn` | Event when toggled on |
-| `OnToggleOff` | Event when toggled off |
-| `OnValueChanged` | Event for any value change |
-
-### UIInputField
-| Member | Description |
-|--------|-------------|
-| `Text` | Input text content |
-| `SetText(string)` | Set text programmatically |
-| `IsFocused` | Whether field is focused |
-| `ActivateInputField()` | Activate keyboard input |
-| `OnTextChanged` | Event for text changes |
-| `OnEndEdit` | Event when editing ends |
-
-### TextStyle_SO
-| Member | Description |
-|--------|-------------|
-| `ApplyTo(TextMeshProUGUI)` | Apply style to text component |
-| `fontSize` | Font size |
-| `characterSpacing` | Character spacing |
-| `wordSpacing` | Word spacing |
-| `lineSpacing` | Line spacing |
+| `FromConfig(Popup_SO, callback)` | Create from ScriptableObject |
+| `Quick(title, message, buttons, callback)` | Create quick popup |
 
 ## Dependencies
 
 ### Required
 - com.hellodev.utils
+- com.hellodev.events
 - com.unity.textmeshpro
+- com.unity.inputsystem
 
 ### Optional
+- com.unity.localization (for localized popups)
 - PrimeTween (for smooth container animations via ITweenProvider)
 - Odin Inspector (for enhanced inspector)
 
 ## Changelog
+
+### v1.1.0 (2026-01-27)
+**Navigation System:**
+- Added UINavigationInputHandler for Cancel/Back routing
+- Added container-level HandleBack() with parent navigation
+- Added auto-select and selection memory per container
+- Added active container registry
+
+**Popup System:**
+- Added UIPopupService for popup queue management
+- Added UIPopup component for popup instances
+- Added Popup_SO for configured popups with localization
+- Added PopupRequestEvent for decoupled popup requests
+- Added focus save/restore when popups open/close
 
 ### v1.0.1 (2026-01-03)
 **Logging:**
