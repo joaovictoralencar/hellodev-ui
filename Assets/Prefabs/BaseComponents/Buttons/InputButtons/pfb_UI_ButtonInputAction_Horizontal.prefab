@@ -161,6 +161,8 @@ MonoBehaviour:
   iconProvider: {fileID: 11400000, guid: ee20dea11ac25924694d0e0e475b8cea, type: 2}
   inputActionButton: {fileID: 8884308176969670086}
   inputPromptDisplay: {fileID: 170596431261002126}
+  buttonLabel: {fileID: 0}
+  autoUpdateOnDeviceChange: 1
   onActionPerformed:
     m_PersistentCalls:
       m_Calls: []
@@ -200,6 +202,10 @@ PrefabInstance:
     - target: {fileID: 3728046669492480050, guid: c3e3bb7fa3e7acb4bbfc554b70950dc5, type: 3}
       propertyPath: m_Name
       value: pfb_UI_Button_Text_InputAction
+      objectReference: {fileID: 0}
+    - target: {fileID: 4807222084712183326, guid: c3e3bb7fa3e7acb4bbfc554b70950dc5, type: 3}
+      propertyPath: m_IsActive
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 5169382239223142911, guid: c3e3bb7fa3e7acb4bbfc554b70950dc5, type: 3}
       propertyPath: m_Spacing
@@ -308,6 +314,10 @@ PrefabInstance:
     - target: {fileID: 8186395250225815984, guid: c3e3bb7fa3e7acb4bbfc554b70950dc5, type: 3}
       propertyPath: m_AnchoredPosition.y
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8879004532892693922, guid: c3e3bb7fa3e7acb4bbfc554b70950dc5, type: 3}
+      propertyPath: m_IsActive
+      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

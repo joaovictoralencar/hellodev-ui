@@ -85,7 +85,7 @@ MonoBehaviour:
   bindingIcon: {fileID: 1471627143604424784}
   textFormat: '{0}'
   preferIcon: 1
-  exclusiveDisplay: 1
+  exclusiveDisplay: 0
   updateBindingUIEvent:
     m_PersistentCalls:
       m_Calls: []
@@ -215,6 +215,18 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 6174599850800359537}
     m_Modifications:
+    - target: {fileID: 4497272765375908098, guid: 47f8748b73e2fb444aed02a270e29328, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6457812942295964247, guid: 47f8748b73e2fb444aed02a270e29328, type: 3}
+      propertyPath: manageActionState
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6457812942295964247, guid: 47f8748b73e2fb444aed02a270e29328, type: 3}
+      propertyPath: enableDebugLogging
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 6721902744876862820, guid: 47f8748b73e2fb444aed02a270e29328, type: 3}
       propertyPath: m_Pivot.x
       value: 0.5
