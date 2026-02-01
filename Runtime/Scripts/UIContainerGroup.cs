@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using HelloDev.Logging;
+using HelloDev.Utils;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.UI;
@@ -77,13 +78,13 @@ namespace HelloDev.UI.Default
 
         private void OnEnable()
         {
-            Container.onShow.AddListener(OnShow);
+            Container.onShow.SafeSubscribe(OnShow);
             //if (debug) Debug.Log($"<color=cyan>UIContainerGroup {gameObject.name} enabled</color>", gameObject);
         }
 
         private void OnDisable()
         {
-            Container.onShow.RemoveListener(OnShow);
+            Container.onShow.SafeUnsubscribe(OnShow);
             //if (debug) Debug.Log($"<color=orange>UIContainerGroup {gameObject.name} DISABLED</color>", gameObject);
         }
 
@@ -350,7 +351,7 @@ namespace HelloDev.UI.Default
                 hideListener = () =>
                 {
                     // Remove this listener to prevent memory leaks
-                    container.onHide.RemoveListener(hideListener);
+                    container.onHide.SafeUnsubscribe(hideListener);
                     onContainerHidden();
                 };
 

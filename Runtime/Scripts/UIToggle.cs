@@ -1,4 +1,5 @@
 using System.Collections;
+using HelloDev.Utils;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.EventSystems;
@@ -94,7 +95,7 @@ namespace HelloDev.UI.Default
                 _toggle = GetComponent<Toggle>();
 
             if (_toggle)
-                _toggle.onValueChanged.AddListener(HandleToggleValueChanged);
+                _toggle.onValueChanged.SafeSubscribe(HandleToggleValueChanged);
 
             base.Awake();
         }
@@ -104,7 +105,7 @@ namespace HelloDev.UI.Default
             base.OnDestroy();
 
             if (_toggle)
-                _toggle.onValueChanged.RemoveListener(HandleToggleValueChanged);
+                _toggle.onValueChanged.SafeUnsubscribe(HandleToggleValueChanged);
 
             if (_checkFocusCoroutine != null)
                 StopCoroutine(_checkFocusCoroutine);

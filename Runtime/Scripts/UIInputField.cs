@@ -1,3 +1,4 @@
+using HelloDev.Utils;
 using UnityEngine;
 using TMPro;
 using UnityEngine.Events;
@@ -29,10 +30,10 @@ namespace HelloDev.UI.Default
             // Add listeners for input field events
             if (_inputField)
             {
-                _inputField.onValueChanged.AddListener(HandleTextChanged);
-                _inputField.onEndEdit.AddListener(HandleEndEdit);
-                _inputField.onSelect.AddListener(HandleSelect);
-                _inputField.onDeselect.AddListener(HandleDeselect);
+                _inputField.onValueChanged.SafeSubscribe(HandleTextChanged);
+                _inputField.onEndEdit.SafeSubscribe(HandleEndEdit);
+                _inputField.onSelect.SafeSubscribe(HandleSelect);
+                _inputField.onDeselect.SafeSubscribe(HandleDeselect);
             }
 
             // Call base Awake
@@ -120,10 +121,10 @@ namespace HelloDev.UI.Default
             base.OnDestroy();
             if (_inputField)
             {
-                _inputField.onValueChanged.RemoveListener(HandleTextChanged);
-                _inputField.onEndEdit.RemoveListener(HandleEndEdit);
-                _inputField.onSelect.RemoveListener(HandleSelect);
-                _inputField.onDeselect.RemoveListener(HandleDeselect);
+                _inputField.onValueChanged.SafeUnsubscribe(HandleTextChanged);
+                _inputField.onEndEdit.SafeUnsubscribe(HandleEndEdit);
+                _inputField.onSelect.SafeUnsubscribe(HandleSelect);
+                _inputField.onDeselect.SafeUnsubscribe(HandleDeselect);
             }
         }
     }

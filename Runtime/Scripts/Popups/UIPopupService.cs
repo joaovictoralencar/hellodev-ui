@@ -63,7 +63,7 @@ namespace HelloDev.UI.Popups
         {
             if (requestEvent != null)
             {
-                requestEvent.RemoveListener(OnPopupRequested);
+                requestEvent.SafeUnsubscribe(OnPopupRequested);
             }
         }
 
