@@ -333,7 +333,10 @@ namespace HelloDev.UI.Default
         }
 
         public void Show(bool fromGroup = false, bool invokeCallbacks = true, Action onShowCallback = null)
-        {
+        {   
+            // Kill any existing animation
+            KillAnimation();
+            
             // If gameobject is disabled, store as pending and exit
             if (!gameObject.activeInHierarchy)
             {
@@ -353,8 +356,7 @@ namespace HelloDev.UI.Default
                 return;
             }
 
-            // Kill any existing animation
-            KillAnimation();
+  
 
             // Set animation in progress flag
             animationInProgress = true;
@@ -407,6 +409,9 @@ namespace HelloDev.UI.Default
 
         public void Hide(bool fromGroup = false, bool invokeCallbacks = true)
         {
+            // Kill any existing animation
+            KillAnimation();
+            
             // If not active, just call callbacks if needed
             if (!gameObject.activeInHierarchy)
             {
@@ -432,9 +437,6 @@ namespace HelloDev.UI.Default
 
             // Remove from active containers
             _activeContainers.Remove(this);
-
-            // Kill any existing animation
-            KillAnimation();
 
             // Set animation in progress
             animationInProgress = true;
@@ -539,7 +541,7 @@ namespace HelloDev.UI.Default
 
         public bool IsVisible()
         {
-            return gameObject.activeSelf && Canvas.enabled && CanvasGroup.alpha > 0;
+            return gameObject.activeSelf && Canvas.enabled && CanvasGroup.alpha > 0 && !IsAnimating();
         }
 
         public bool IsAnimating()
