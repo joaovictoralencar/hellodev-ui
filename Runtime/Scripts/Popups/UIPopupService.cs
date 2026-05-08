@@ -13,19 +13,19 @@ namespace HelloDev.UI.Popups
     /// </summary>
     public class UIPopupService : MonoBehaviour
     {
-        [Header("Prefabs")]
-        [Tooltip("Default popup prefab used when no custom prefab is specified.")]
-        [SerializeField] private UIPopup defaultPrefab;
+        [Header("Prefabs")] [Tooltip("Default popup prefab used when no custom prefab is specified.")] [SerializeField]
+        private UIPopup defaultPrefab;
 
-        [Tooltip("Parent transform for spawned popups.")]
-        [SerializeField] private Transform popupContainer;
+        [Tooltip("Parent transform for spawned popups.")] [SerializeField]
+        private Transform popupContainer;
 
+#if HELLODEV_GAME_EVENTS
         [Header("Events")]
         [Tooltip("Subscribe to this event for decoupled popup requests.")]
         [SerializeField] private PopupRequestEvent requestEvent;
+#endif
 
-        [Header("Debug")]
-        [SerializeField] private bool debug;
+        [Header("Debug")] [SerializeField] private bool debug;
 
         #region Private Fields
 
@@ -53,18 +53,22 @@ namespace HelloDev.UI.Popups
 
         private void OnEnable()
         {
+#if HELLODEV_GAME_EVENTS
             if (requestEvent != null)
             {
                 requestEvent.AddListener(OnPopupRequested);
             }
+#endif
         }
 
         private void OnDisable()
         {
+#if HELLODEV_GAME_EVENTS
             if (requestEvent != null)
             {
                 requestEvent.SafeUnsubscribe(OnPopupRequested);
             }
+#endif
         }
 
         private void OnDestroy()
@@ -88,7 +92,7 @@ namespace HelloDev.UI.Popups
         {
             if (config == null)
             {
-                Logger.LogError(LogSystems.UIPopup, "Cannot show popup: config is null");
+                Logger.LogError("UI", "Cannot show popup: config is null");
                 return;
             }
 
@@ -130,8 +134,9 @@ namespace HelloDev.UI.Popups
             {
                 if (debug)
                 {
-                    Logger.Log(LogSystems.UIPopup, "UIPopupService handling cancel input");
+                    Logger.Log("UI", "UIPopupService handling cancel input");
                 }
+
                 _currentPopup.HandleCancel();
             }
         }
@@ -145,7 +150,7 @@ namespace HelloDev.UI.Popups
             {
                 if (debug)
                 {
-                    Logger.Log(LogSystems.UIPopup, "Force closing current popup");
+                    Logger.Log("UI", "Force closing current popup");
                 }
 
                 Destroy(_currentPopup.gameObject);
@@ -174,7 +179,7 @@ namespace HelloDev.UI.Popups
 
             if (debug)
             {
-                Logger.Log(LogSystems.UIPopup, $"Popup request enqueued. Queue size: {_queue.Count}");
+                Logger.Log("UI", $"Popup request enqueued. Queue size: {_queue.Count}");
             }
 
             ProcessQueue();
@@ -208,7 +213,7 @@ namespace HelloDev.UI.Popups
             UIPopup prefab = GetPrefab(request);
             if (prefab == null)
             {
-                Logger.LogError(LogSystems.UIPopup, "Cannot show popup: no prefab available");
+                Logger.LogError("UI", "Cannot show popup: no prefab available");
                 RestoreFocus();
                 ProcessQueue();
                 return;
@@ -223,7 +228,7 @@ namespace HelloDev.UI.Popups
 
             if (_currentPopup == null)
             {
-                Logger.LogError(LogSystems.UIPopup, "Instantiated prefab does not have UIPopup component");
+                Logger.LogError("UI", "Instantiated prefab does not have UIPopup component");
                 Destroy(popupGO);
                 RestoreFocus();
                 ProcessQueue();
@@ -260,7 +265,7 @@ namespace HelloDev.UI.Popups
 
             if (debug)
             {
-                Logger.Log(LogSystems.UIPopup, "Popup shown");
+                Logger.Log("UI", "Popup shown");
             }
         }
 
@@ -310,7 +315,7 @@ namespace HelloDev.UI.Popups
 
                 if (debug && _savedSelection != null)
                 {
-                    Logger.LogVerbose(LogSystems.UIPopup, $"Saved focus: {_savedSelection.name}");
+                    Logger.LogVerbose("UI", $"Saved focus: {_savedSelection.name}");
                 }
             }
         }
@@ -326,7 +331,7 @@ namespace HelloDev.UI.Popups
 
                     if (debug)
                     {
-                        Logger.LogVerbose(LogSystems.UIPopup, $"Restored focus: {_savedSelection.name}");
+                        Logger.LogVerbose("UI", $"Restored focus: {_savedSelection.name}");
                     }
                 }
 

@@ -62,7 +62,7 @@ namespace HelloDev.UI.Default
             {
                 if (group == null)
                 {
-                    Logger.LogError(LogSystems.UI, "A UIContainerGroup is missing in the UIContainerGroupManager.");
+                    Logger.LogError("UI", "A UIContainerGroup is missing in the UIContainerGroupManager.");
                 }
                 else 
                 {
@@ -101,7 +101,7 @@ namespace HelloDev.UI.Default
                 tempFirstActiveContainer = containerGroups.Find(c => c.gameObject.activeSelf);
                 if (tempFirstActiveContainer == null)
                 {
-                    Logger.LogWarning(LogSystems.UI, $"No enabled UIContainerGroup found in group manager {gameObject.name}.");
+                    Logger.LogWarning("UI", $"No enabled UIContainerGroup found in group manager {gameObject.name}.");
                     return;
                 }
             }
@@ -158,7 +158,7 @@ namespace HelloDev.UI.Default
 
             if (group == null)
             {
-                Logger.LogError(LogSystems.UI, $"UIContainerGroup with ID {groupId} not found.");
+                Logger.LogError("UI", $"UIContainerGroup with ID {groupId} not found.");
                 return;
             }
 
@@ -215,13 +215,13 @@ namespace HelloDev.UI.Default
         {
             if (container == null)
             {
-                Logger.LogError(LogSystems.UI, "Cannot show null container");
+                Logger.LogError("UI", "Cannot show null container");
                 return;
             }
 
             if (container.Group == null)
             {
-                Logger.LogError(LogSystems.UI, $"Container {container.ID} does not have a group assigned");
+                Logger.LogError("UI", $"Container {container.ID} does not have a group assigned");
                 return;
             }
 
@@ -232,7 +232,7 @@ namespace HelloDev.UI.Default
         {
             if (!containerGroups.Contains(group))
             {
-                Logger.LogError(LogSystems.UI, $"Group {group.name} is not registered with this manager");
+                Logger.LogError("UI", $"Group {group.name} is not registered with this manager");
                 return;
             }
             
@@ -305,7 +305,7 @@ namespace HelloDev.UI.Default
             }
             else
             {
-                Logger.LogWarning(LogSystems.UI, "Cannot navigate back: No previous groups in the stack.");
+                Logger.LogWarning("UI", "Cannot navigate back: No previous groups in the stack.");
             }
         }
         

@@ -123,7 +123,7 @@ namespace HelloDev.UI.Default
 
             if (containers.Count == 0)
             {
-                Logger.LogWarning(LogSystems.UI, $"No UIContainers found in group {GroupID}.");
+                Logger.LogWarning("UI", $"No UIContainers found in group {GroupID}.");
                 onShow?.Invoke();
                 return;
             }
@@ -142,7 +142,7 @@ namespace HelloDev.UI.Default
                     }
                     else
                     {
-                        Logger.LogWarning(LogSystems.UI, $"No enabled UIContainer found in group {GroupID}.");
+                        Logger.LogWarning("UI", $"No enabled UIContainer found in group {GroupID}.");
                         onShow?.Invoke();
                         return;
                     }
@@ -162,7 +162,7 @@ namespace HelloDev.UI.Default
 
             if (containerToShow == null)
             {
-                Logger.LogError(LogSystems.UI, $"UIContainer with ID {id} not found in group {GroupID}");
+                Logger.LogError("UI", $"UIContainer with ID {id} not found in group {GroupID}");
                 onShow?.Invoke();
                 return;
             }
@@ -231,14 +231,14 @@ namespace HelloDev.UI.Default
         {
             if (container == null)
             {
-                Logger.LogError(LogSystems.UI, "Cannot show null container");
+                Logger.LogError("UI", "Cannot show null container");
                 onShow?.Invoke();
                 return;
             }
 
             if (!containers.Contains(container))
             {
-                Logger.LogError(LogSystems.UI, $"Container {container.ID} is not part of group {GroupID}");
+                Logger.LogError("UI", $"Container {container.ID} is not part of group {GroupID}");
                 onShow?.Invoke();
                 return;
             }

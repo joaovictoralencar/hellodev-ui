@@ -4,10 +4,10 @@
     "references": [
         "Unity.TextMeshPro",
         "HelloDev.Utils",
-        "HelloDev.Events",
         "PrimeTween.Runtime",
         "Unity.InputSystem",
-        "Unity.Localization"
+        "Unity.Localization",
+        "HelloDev.Events"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

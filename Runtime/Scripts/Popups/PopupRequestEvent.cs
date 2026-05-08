@@ -1,3 +1,4 @@
+#if HELLODEV_GAME_EVENTS
 using HelloDev.Events;
 using UnityEngine;
 
@@ -12,3 +13,4 @@ namespace HelloDev.UI.Popups
     {
     }
 }
+#endif

@@ -76,7 +76,7 @@ namespace HelloDev.UI.Popups
         {
             if (config == null)
             {
-                Logger.LogError(LogSystems.UIPopup, "Cannot setup popup: config is null");
+                Logger.LogError("UI", "Cannot setup popup: config is null");
                 return;
             }
 
@@ -143,7 +143,7 @@ namespace HelloDev.UI.Popups
 
             if (debug)
             {
-                Logger.Log(LogSystems.UIPopup, $"Popup setup from config: {config.name}");
+                Logger.Log("UI", $"Popup setup from config: {config.name}");
             }
         }
 
@@ -223,7 +223,7 @@ namespace HelloDev.UI.Popups
 
             if (debug)
             {
-                Logger.Log(LogSystems.UIPopup, $"Popup setup with title: {title}");
+                Logger.Log("UI", $"Popup setup with title: {title}");
             }
         }
 
@@ -234,7 +234,7 @@ namespace HelloDev.UI.Popups
         {
             if (debug)
             {
-                Logger.Log(LogSystems.UIPopup, $"Popup closed with button index: {buttonIndex}");
+                Logger.Log("UI", $"Popup closed with button index: {buttonIndex}");
             }
 
             // Hide the container
@@ -253,7 +253,7 @@ namespace HelloDev.UI.Popups
             {
                 if (debug)
                 {
-                    Logger.Log(LogSystems.UIPopup, $"Popup HandleCancel → button index: {_cancelButtonIndex}");
+                    Logger.Log("UI", $"Popup HandleCancel → button index: {_cancelButtonIndex}");
                 }
                 Close(_cancelButtonIndex);
             }
@@ -263,7 +263,7 @@ namespace HelloDev.UI.Popups
                 int lastIndex = _spawnedButtons.Count - 1;
                 if (debug)
                 {
-                    Logger.Log(LogSystems.UIPopup, $"Popup HandleCancel → fallback to last button: {lastIndex}");
+                    Logger.Log("UI", $"Popup HandleCancel → fallback to last button: {lastIndex}");
                 }
                 Close(lastIndex);
             }
@@ -306,7 +306,7 @@ namespace HelloDev.UI.Popups
 
                 if (debug)
                 {
-                    Logger.LogVerbose(LogSystems.UIPopup, $"Created button [{index}]: {label}");
+                    Logger.LogVerbose("UI", $"Created button [{index}]: {label}");
                 }
             }
         }

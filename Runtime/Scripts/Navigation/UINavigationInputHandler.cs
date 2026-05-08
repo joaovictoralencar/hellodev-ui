@@ -87,7 +87,7 @@ namespace HelloDev.UI.Navigation
 
             if (debug)
             {
-                Logger.Log(LogSystems.UINavigation, $"Cancel action created: keyboard={keyboardCancel}, gamepad={gamepadCancel}");
+                Logger.Log("UI", $"Cancel action created: keyboard={keyboardCancel}, gamepad={gamepadCancel}");
             }
         }
 
@@ -102,7 +102,7 @@ namespace HelloDev.UI.Navigation
 
                 if (debug)
                 {
-                    Logger.Log(LogSystems.UINavigation, "Cancel action disposed");
+                    Logger.Log("UI", "Cancel action disposed");
                 }
             }
         }
@@ -111,7 +111,7 @@ namespace HelloDev.UI.Navigation
         {
             if (debug)
             {
-                Logger.Log(LogSystems.UINavigation, "Cancel input performed");
+                Logger.Log("UI", "Cancel input performed");
             }
 
             // Check if popup service wants to handle it first (if assigned)
@@ -119,7 +119,7 @@ namespace HelloDev.UI.Navigation
             {
                 if (debug)
                 {
-                    Logger.Log(LogSystems.UINavigation, "→ Routing to popup service");
+                    Logger.Log("UI", "→ Routing to popup service");
                 }
                 popupService.HandleCancelInput();
                 return;
@@ -131,13 +131,13 @@ namespace HelloDev.UI.Navigation
             {
                 if (debug)
                 {
-                    Logger.Log(LogSystems.UINavigation, $"→ Routing to container: {container.gameObject.name}");
+                    Logger.Log("UI", $"→ Routing to container: {container.gameObject.name}");
                 }
                 container.HandleBack();
             }
             else if (debug)
             {
-                Logger.Log(LogSystems.UINavigation, "→ No container found for current selection");
+                Logger.Log("UI", "→ No container found for current selection");
             }
         }
 
