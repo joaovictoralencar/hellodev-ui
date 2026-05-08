@@ -1,9 +1,6 @@
 {
-  "name": "com.hellodev.ui",
-  "version": "1.0.0",
-  "displayName": "HelloDev UI",
   "description": "A modular UI system for Unity games. Provides container-based UI management, custom selectables, and styling components.",
-  "unity": "6000.0",
+  "displayName": "HelloDev UI",
   "keywords": [
     "ui",
     "containers",
@@ -11,13 +8,21 @@
     "buttons",
     "toggles"
   ],
-  "author": {
-    "name": "Hello Dev",
-    "email": "hello.dev.tecnologia@gmail.com"
-  },
   "dependencies": {
     "com.hellodev.utils": "1.0.0",
     "com.hellodev.events": "1.0.0",
     "com.unity.textmeshpro": "3.0.0"
+  },
+  "unity": "6000.0",
+  "name": "com.hellodev.ui",
+  "version": "1.0.0",
+  "license": "MIT",
+  "author": {
+    "name": "Hello Dev",
+    "email": "hello.dev.tecnologia@gmail.com"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/joaovictoralencar/hellodev-ui.git"
   }
 }
