@@ -22,6 +22,10 @@ Key changes in v1.0.2
 Installation
 Add the package to Unity Package Manager -> Add package from Git URL:
 
-$installUrl#v1.0.3
+$installUrl#v1.0.4
 
 See CHANGELOG.md for full release notes.
+
+Samples
+- Base Prefabs (Optional): Samples~/Prefabs — basic UI prefabs that do not require the Input System.
+- Input Prefabs (Optional, requires Input System + com.hellodev.input): Samples~/InputButtons — input-specific prefabs that depend on the Unity Input System and the optional com.hellodev.input package.

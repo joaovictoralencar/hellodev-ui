@@ -15,14 +15,19 @@
   },
   "samples": [
     {
-      "displayName": "Prefabs (Optional)",
-      "description": "Optional prefab samples including input-related prefabs.",
+      "displayName": "Base Prefabs (Optional)",
+      "description": "Base UI prefabs (no Input System required).",
       "path": "Samples~/Prefabs"
+    },
+    {
+      "displayName": "Input Prefabs (Requires Input System & com.hellodev.input)",
+      "description": "Input-specific prefabs that require Unity Input System and the com.hellodev.input package. Import only if you have those packages installed.",
+      "path": "Samples~/InputButtons"
     }
   ],
   "unity": "6000.0",
   "name": "com.hellodev.ui",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "license": "MIT",
   "author": {
     "name": "Hello Dev",
