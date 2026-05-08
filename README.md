@@ -14,4 +14,4 @@ $installUrl
 
 Import into your project and follow the HelloDev docs.
 
-Note: The InputButtons prefabs have been moved to Samples~/InputButtons and are provided as an optional sample (they depend on the external com.hellodev.input repository). The package now lists com.unity.localization as a hard dependency for localization features; com.hellodev.input is intentionally not a hard dependency.
+Note: All prefabs previously under Assets/Prefabs have been moved to Samples~/Prefabs and are provided as optional samples (they may depend on external packages like com.hellodev.input). The package lists com.unity.localization as a hard dependency; com.hellodev.input is intentionally optional.
