@@ -10,7 +10,6 @@
   ],
   "dependencies": {
     "com.hellodev.utils": "1.0.0",
-    "com.hellodev.events": "1.0.0",
     "com.unity.textmeshpro": "3.0.0"
   },
   "unity": "6000.0",
