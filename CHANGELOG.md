@@ -2,6 +2,9 @@
 
 All notable changes to this project are documented here.
 
+## [1.0.5] - 2026-05-08
+- Add Samples~/InputButtons/README with install instructions.
+
 ## [1.0.4] - 2026-05-08
 - Split samples into two entries: "Base Prefabs" (Samples~/Prefabs) and "Input Prefabs" (Samples~/InputButtons). This makes input prefabs optional and clearly separated.
 - Updated package.json samples and bumped version to 1.0.4.
