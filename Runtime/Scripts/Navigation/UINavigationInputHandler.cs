@@ -2,7 +2,9 @@ using HelloDev.Logging;
 using HelloDev.UI.Default;
 using HelloDev.UI.Popups;
 using UnityEngine;
+#if ENABLE_INPUT_SYSTEM
 using UnityEngine.InputSystem;
+#endif
 using Logger = HelloDev.Logging.Logger;
 
 namespace HelloDev.UI.Navigation
@@ -32,12 +34,15 @@ namespace HelloDev.UI.Navigation
 
         #region Private Fields
 
+#if ENABLE_INPUT_SYSTEM
         private InputAction _cancelAction;
+#endif
 
         #endregion
 
         #region Unity Lifecycle
 
+#if ENABLE_INPUT_SYSTEM
         private void OnEnable()
         {
             CreateCancelAction();
@@ -47,11 +52,13 @@ namespace HelloDev.UI.Navigation
         {
             DisposeCancelAction();
         }
+#endif
 
         #endregion
 
         #region Input Action Management
 
+#if ENABLE_INPUT_SYSTEM
         private void CreateCancelAction()
         {
             if (_cancelAction != null)
@@ -140,6 +147,7 @@ namespace HelloDev.UI.Navigation
                 Logger.Log("UI", "→ No container found for current selection");
             }
         }
+#endif
 
         #endregion
 
@@ -151,7 +159,45 @@ namespace HelloDev.UI.Navigation
         /// </summary>
         public void TriggerCancel()
         {
+#if ENABLE_INPUT_SYSTEM
             OnCancelPerformed(default);
+#else
+            OnCancelPerformed();
+#endif
+        }
+
+        private void OnCancelPerformed()
+        {
+            if (debug)
+            {
+                Logger.Log("UI", "Cancel input performed (fallback)");
+            }
+
+            // Check if popup service wants to handle it first (if assigned)
+            if (popupService != null && popupService.HasActivePopup)
+            {
+                if (debug)
+                {
+                    Logger.Log("UI", "→ Routing to popup service");
+                }
+                popupService.HandleCancelInput();
+                return;
+            }
+
+            // Route to current container
+            var container = UIContainer.GetContainerForSelection();
+            if (container != null)
+            {
+                if (debug)
+                {
+                    Logger.Log("UI", $"→ Routing to container: {container.gameObject.name}");
+                }
+                container.HandleBack();
+            }
+            else if (debug)
+            {
+                Logger.Log("UI", "→ No container found for current selection");
+            }
         }
 
         /// <summary>

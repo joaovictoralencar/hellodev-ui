@@ -22,6 +22,6 @@ Key changes in v1.0.2
 Installation
 Add the package to Unity Package Manager -> Add package from Git URL:
 
-$installUrl#v1.0.2
+$installUrl#v1.0.3
 
 See CHANGELOG.md for full release notes.
