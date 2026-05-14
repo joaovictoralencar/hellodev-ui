@@ -1,40 +1,31 @@
 {
-  "description": "A modular UI system for Unity games. Provides container-based UI management, custom selectables, and styling components.",
+  "name": "com.hellodev.ui",
   "displayName": "HelloDev UI",
+  "version": "2.0.0",
+  "unity": "2021.3",
+  "description": "Modular UI package for Unity. Provides a data-driven color-theme system, customizable selectables (button, toggle, input field), popup management, and optional InputSystem navigation. Designed for both designers and programmers.",
   "keywords": [
     "ui",
-    "containers",
-    "selectables",
-    "buttons",
-    "toggles"
+    "theme",
+    "color",
+    "button",
+    "toggle",
+    "popup",
+    "selectable",
+    "hellodev"
   ],
-  "dependencies": {
-    "com.hellodev.utils": "1.0.0",
-    "com.unity.textmeshpro": "3.0.0",
-    "com.unity.localization": "1.5.11"
-  },
-  "samples": [
-    {
-      "displayName": "Base Prefabs (Optional)",
-      "description": "Base UI prefabs (no Input System required).",
-      "path": "Samples~/Prefabs"
-    },
-    {
-      "displayName": "Input Prefabs (Requires Input System & com.hellodev.input)",
-      "description": "Input-specific prefabs that require Unity Input System and the com.hellodev.input package. Import only if you have those packages installed.",
-      "path": "Samples~/InputButtons"
-    }
-  ],
-  "unity": "6000.0",
-  "name": "com.hellodev.ui",
-  "version": "1.0.5",
-  "license": "MIT",
   "author": {
-    "name": "Hello Dev",
-    "email": "hello.dev.tecnologia@gmail.com"
+    "name": "HelloDev",
+    "url": "https://github.com/joaovictoralencar"
   },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/joaovictoralencar/hellodev-ui.git"
+  "license": "MIT",
+  "dependencies": {
+    "com.unity.textmeshpro": "3.0.6",
+    "com.hellodev.utils": "https://github.com/joaovictoralencar/hellodev-utils.git#v1.0.1"
+  },
+  "optionalDependencies": {
+    "com.kyrylokuzyk.primetween": ">=1.0.0",
+    "com.unity.inputsystem": ">=1.0.0",
+    "com.unity.localization": ">=1.0.0"
   }
 }

@@ -1,0 +1,20 @@
+{
+    "name": "HelloDev.UI.Editor",
+    "rootNamespace": "HelloDev.UI.Default.Editor",
+    "references": [
+        "HelloDev.UI",
+        "HelloDev.Utils",
+        "Unity.TextMeshPro"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

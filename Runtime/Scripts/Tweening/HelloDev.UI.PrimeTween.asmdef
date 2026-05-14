@@ -1,0 +1,22 @@
+{
+    "name": "HelloDev.UI.PrimeTween",
+    "rootNamespace": "HelloDev.UI.Tweening",
+    "references": [
+        "HelloDev.UI",
+        "HelloDev.Utils",
+        "PrimeTween.Runtime"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [
+        "PRIME_TWEEN_INSTALLED"
+    ],
+    "versionDefines": [
+        { "name": "com.kyrylokuzyk.primetween", "expression": "1.0.0", "define": "PRIME_TWEEN_INSTALLED" }
+    ],
+    "noEngineReferences": false
+}

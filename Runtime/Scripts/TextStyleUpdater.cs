@@ -3,6 +3,7 @@ using UnityEngine;
 
 namespace HelloDev.UI.Default
 {
+    [System.Obsolete("Use TMPFontBinder + TextStyle_SO instead.")]
     [RequireComponent(typeof(TextMeshProUGUI))]
     public class TextStyleUpdater : MonoBehaviour
     {

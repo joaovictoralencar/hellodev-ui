@@ -2,6 +2,7 @@ using System.Collections;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.EventSystems;
+using HelloDev.Tweening;
 #if ODIN_INSPECTOR
 using Sirenix.OdinInspector;
 #endif
@@ -29,23 +30,32 @@ namespace HelloDev.UI.Default
         [SerializeField] protected SelectableState currentState;
         [SerializeField] protected bool debugMode = false;
 
+        public SelectableState CurrentState => currentState;
+
         protected Vector3 originalScale;
         protected bool selected;
         protected bool mouseOver;
         protected bool pointerDown;
 
-        // Events for each state
-        public UnityEvent NormalStateEvent = new();
-        public UnityEvent SelectedStateEvent = new();
-        public UnityEvent HighlightedStateEvent = new();
-        public UnityEvent PressedStateEvent = new();
-        public UnityEvent DisabledStateEvent = new();
-        public UnityEvent<SelectableState> ChangedStateEvent = new();
+        // ── Events ───────────────────────────────────────────────────────────────
 
-        // Abstract property for interactability to be implemented by child classes
+        public UnityEvent NormalStateEvent     = new();
+        public UnityEvent SelectedStateEvent   = new();
+        public UnityEvent HighlightedStateEvent = new();
+        public UnityEvent PressedStateEvent    = new();
+        public UnityEvent DisabledStateEvent   = new();
+        public UnityEvent<SelectableState> ChangedStateEvent = new();
+        public UnityEvent EndPressing { get; } = new UnityEvent();
+
+        // ── Optional components ──────────────────────────────────────────────────
+
+        private UIColourStyle _colourStyle;
+
+        // ── Lifecycle ────────────────────────────────────────────────────────────
+
         public abstract bool IsInteractable { get; }
 
-        bool lastInteractable = false;
+        private bool _lastInteractable;
 
 #if ODIN_INSPECTOR
         [Button]
@@ -53,35 +63,44 @@ namespace HelloDev.UI.Default
         public void ToggleSetInteractable()
         {
             if (!Application.isPlaying) return;
-            if (lastInteractable == IsInteractable) return;
+            if (_lastInteractable == IsInteractable) return;
             SetInteractable(IsInteractable);
-            lastInteractable = IsInteractable;
+            _lastInteractable = IsInteractable;
         }
 
         protected virtual void Awake()
         {
             originalScale = transform.localScale;
+            _colourStyle = GetComponent<UIColourStyle>();
             InitializeState();
         }
 
-        protected virtual void OnDestroy()
-        {
-        }
+        protected virtual void OnDestroy() { }
 
         protected virtual void OnEnable()
         {
             UpdateState();
         }
 
+        protected virtual void OnDisable()
+        {
+            if (_pressStateCoroutine != null)
+            {
+                StopCoroutine(_pressStateCoroutine);
+                _pressStateCoroutine = null;
+            }
+            KillScaleTween();
+        }
+
         protected virtual void InitializeState()
         {
-            if (EventSystem.current && EventSystem.current.currentSelectedGameObject == gameObject)
-                currentState = SelectableState.Selected;
-            else
-                currentState = IsInteractable ? SelectableState.Normal : SelectableState.Disabled;
-
+            currentState = (EventSystem.current && EventSystem.current.currentSelectedGameObject == gameObject)
+                ? SelectableState.Selected
+                : IsInteractable ? SelectableState.Normal : SelectableState.Disabled;
             UpdateState();
         }
+
+        // ── State machine ────────────────────────────────────────────────────────
 
         protected void ChangeState(SelectableState newState)
         {
@@ -116,21 +135,69 @@ namespace HelloDev.UI.Default
                     break;
             }
 
+            _colourStyle?.Apply(currentState);
+            ApplyScaleAnimation(currentState);
             ChangedStateEvent?.Invoke(currentState);
             if (debugMode) UpdateDebugText();
         }
 
-        // Abstract or virtual methods to be overridden by child classes
-        protected virtual void UpdateDebugText()
+        // ── Scale animation ──────────────────────────────────────────────────────
+
+        private ITweenHandle _scaleTween;
+        private Coroutine    _scaleCoroutine;
+
+        private void ApplyScaleAnimation(SelectableState state)
         {
+            if (_colourStyle == null || _colourStyle.Style == null) return;
+            var style = _colourStyle.Style;
+            if (!style.ScaleOnSelect) return;
+
+            bool enlarged = state == SelectableState.Selected || state == SelectableState.Highlighted;
+            var  target   = enlarged ? Vector3.one * style.ScaledSize : originalScale;
+
+            // Skip the tween if we're already at the target scale — avoids a PrimeTween warning.
+            if (transform.localScale == target) return;
+
+            float duration = style.ScaleTime;
+            KillScaleTween();
+
+            if (TweenService.IsConfigured)
+            {
+                _scaleTween = TweenService.Provider.Scale(transform, target, duration);
+            }
+            else
+            {
+                _scaleCoroutine = StartCoroutine(LerpScale(target, duration));
+            }
         }
+
+        private void KillScaleTween()
+        {
+            if (_scaleTween != null) { _scaleTween.Kill(); _scaleTween = null; }
+            if (_scaleCoroutine != null) { StopCoroutine(_scaleCoroutine); _scaleCoroutine = null; }
+            if (TweenService.IsConfigured) TweenService.Provider.Kill(transform);
+        }
+
+        private IEnumerator LerpScale(Vector3 target, float duration)
+        {
+            var start   = transform.localScale;
+            float elapsed = 0f;
+            while (elapsed < duration)
+            {
+                elapsed += Time.unscaledDeltaTime;
+                transform.localScale = Vector3.Lerp(start, target, elapsed / duration);
+                yield return null;
+            }
+            transform.localScale = target;
+            _scaleCoroutine = null;
+        }
+
+        // ── Event system handlers ────────────────────────────────────────────────
 
         public virtual void OnSelect(BaseEventData eventData)
         {
             selected = true;
             ChangeState(SelectableState.Selected);
-
-            // Notify UIScroll instances for auto-scroll to selection
             UIScroll.NotifySelected(gameObject);
         }
 
@@ -168,90 +235,57 @@ namespace HelloDev.UI.Default
             pointerDown = false;
         }
 
-        private Coroutine pressStateCoroutine;
+        private Coroutine _pressStateCoroutine;
 
         public virtual void OnSubmit(BaseEventData eventData)
         {
             if (mouseOver && pointerDown) return;
-
-            // Cancel any existing coroutine first
-            if (pressStateCoroutine != null)
+            if (_pressStateCoroutine != null)
             {
-                StopCoroutine(pressStateCoroutine);
-                pressStateCoroutine = null;
+                StopCoroutine(_pressStateCoroutine);
+                _pressStateCoroutine = null;
             }
-
-            // Change state to Pressed
             ChangeState(SelectableState.Pressed);
-
-            // Start new coroutine and store reference
-            pressStateCoroutine = StartCoroutine(ReturnToSelectedState());
+            _pressStateCoroutine = StartCoroutine(ReturnToSelectedState());
         }
-
-        public UnityEvent EndPressing { get; } = new UnityEvent();
 
         private IEnumerator ReturnToSelectedState()
         {
             try
             {
-                // Wait for a small amount of time to show the pressed visual state
                 yield return new WaitForSeconds(0.1f);
-
-                // Check if the object is still active and selected before changing state
                 if (gameObject.activeInHierarchy && selected)
-                {
                     ChangeState(SelectableState.Selected);
-                }
                 else if (gameObject.activeInHierarchy)
-                {
-                    // Reset to appropriate state if conditions changed
                     ChangeState(mouseOver ? SelectableState.Highlighted : SelectableState.Normal);
-                }
-
                 EndPressing?.Invoke();
             }
             finally
             {
-                // Always clear the coroutine reference
-                pressStateCoroutine = null;
+                _pressStateCoroutine = null;
             }
         }
 
-        protected virtual void OnDisable()
-        {
-            // Clean up if the GameObject is disabled
-            if (pressStateCoroutine != null)
-            {
-                StopCoroutine(pressStateCoroutine);
-                pressStateCoroutine = null;
-            }
-        }
+        // ── Overridable ──────────────────────────────────────────────────────────
 
-        // Abstract methods to be implemented by child classes
         public abstract void SetInteractable(bool interactable);
 
-        #region State Handlers
+        protected virtual void UpdateDebugText() { }
 
-        protected virtual void OnNormalState()
+        protected virtual void OnNormalState()      { }
+        protected virtual void OnSelectedState()    { }
+        protected virtual void OnHighlightedState() { }
+        protected virtual void OnPressedState()     { }
+        protected virtual void OnDisabledState()    { }
+
+#if UNITY_EDITOR
+        protected virtual void OnValidate()
         {
+            if (Application.isPlaying) return;
+            // Refresh the colour style preview in edit mode
+            _colourStyle = GetComponent<UIColourStyle>();
+            _colourStyle?.Apply(currentState);
         }
-
-        protected virtual void OnSelectedState()
-        {
-        }
-
-        protected virtual void OnHighlightedState()
-        {
-        }
-
-        protected virtual void OnPressedState()
-        {
-        }
-
-        protected virtual void OnDisabledState()
-        {
-        }
-
-        #endregion
+#endif
     }
 }

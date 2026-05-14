@@ -23,11 +23,12 @@ namespace HelloDev.UI.Default
 
         protected override void Awake()
         {
-            // Ensure input field is assigned
             if (_inputField == null)
                 _inputField = GetComponent<TMP_InputField>();
 
-            // Add listeners for input field events
+            // UIColourStyle.Awake() auto-discovers the background Graphic via GetComponent,
+            // which finds the TMP_InputField's targetGraphic automatically.
+
             if (_inputField)
             {
                 _inputField.onValueChanged.SafeSubscribe(HandleTextChanged);
@@ -36,7 +37,6 @@ namespace HelloDev.UI.Default
                 _inputField.onDeselect.SafeSubscribe(HandleDeselect);
             }
 
-            // Call base Awake
             base.Awake();
         }
 
@@ -89,30 +89,18 @@ namespace HelloDev.UI.Default
 
         protected override void OnNormalState()
         {
-            // Default visual state
-            if (_inputField != null && _inputField.targetGraphic != null)
-                _inputField.targetGraphic.color = Color.white;
         }
 
         protected override void OnSelectedState()
         {
-            // Visual feedback when selected
-            if (_inputField != null && _inputField.targetGraphic != null)
-                _inputField.targetGraphic.color = Color.cyan;
         }
 
         protected override void OnHighlightedState()
         {
-            // Visual feedback when highlighted
-            if (_inputField != null && _inputField.targetGraphic != null)
-                _inputField.targetGraphic.color = Color.yellow;
         }
 
         protected override void OnDisabledState()
         {
-            // Visual feedback when disabled
-            if (_inputField != null && _inputField.targetGraphic != null)
-                _inputField.targetGraphic.color = Color.gray;
         }
 
         // Clean up listeners when object is destroyed
