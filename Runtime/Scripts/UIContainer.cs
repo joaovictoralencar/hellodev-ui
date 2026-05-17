@@ -325,7 +325,7 @@ namespace HelloDev.UI.Default
         public void ShowContainer(bool invokeCallbacks = true)
         {
             if (Group != null) Group.ShowContainer(this);
-            else Show(false, invokeCallbacks, null);
+            else Show(Group != null, invokeCallbacks, null);
         }
 
         public void HideContainer(bool invokeCallbacks = true)
