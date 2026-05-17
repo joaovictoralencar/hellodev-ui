@@ -324,12 +324,12 @@ namespace HelloDev.UI.Default
 
         public void ShowContainer(bool invokeCallbacks = true)
         {
-            Show(false, invokeCallbacks, null);
+            Show(Group != null, invokeCallbacks, null);
         }
 
         public void HideContainer(bool invokeCallbacks = true)
         {
-            Hide(false, invokeCallbacks);
+            Hide(Group != null, invokeCallbacks);
         }
 
         public void Show(bool fromGroup = false, bool invokeCallbacks = true, Action onShowCallback = null)
