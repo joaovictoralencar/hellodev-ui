@@ -37,7 +37,7 @@ namespace HelloDev.UI.Default
 
             if (slot.DefaultColour != null)
             {
-                Logger.LogVerbose("UI", $"[UIDatabase_SO '<color=#80C0F0>{name}</color>'] " +
+                Logger.LogVerbose(HelloDev.Logging.UIConstants.System, $"[UIDatabase_SO '<color=#80C0F0>{name}</color>'] " +
                     $"Slot '<color=#F0D080>{slot.DisplayName}</color>' not in theme '<color=#F0D080>{theme?.name}</color>' — using DefaultColour.");
                 return slot.DefaultColour.Colour;
             }
@@ -128,3 +128,4 @@ namespace HelloDev.UI.Default
 #endif
     }
 }
+

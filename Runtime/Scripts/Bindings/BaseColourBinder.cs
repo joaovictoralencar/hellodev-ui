@@ -74,13 +74,13 @@ namespace HelloDev.UI.Default
                 if (directColour != null)
                 {
                     ApplyColour(directColour.Colour);
-                    Logger.LogVerbose("UI", $"[{GetType().Name} '<color=#AAAAAA>{name}</color>'] " +
+                    Logger.LogVerbose(HelloDev.Logging.UIConstants.System, $"[{GetType().Name} '<color=#AAAAAA>{name}</color>'] " +
                         $"Direct colour '<color=#F0D080>{directColour.name}</color>' -> {HexTag(directColour.Colour)}");
                 }
                 else
                 {
                     ApplyColour(fallbackColour);
-                    Logger.LogWarning("UI", $"[{GetType().Name} '{name}'] useDirectColour=true but directColour is null — using fallback");
+                    Logger.LogWarning(HelloDev.Logging.UIConstants.System, $"[{GetType().Name} '{name}'] useDirectColour=true but directColour is null — using fallback");
                 }
 
                 yield break;
@@ -94,7 +94,7 @@ namespace HelloDev.UI.Default
                 {
                     if (++frames >= 300)
                     {
-                        Logger.LogWarning("UI", $"[{GetType().Name} '{name}'] No UIThemeRuntime found after 300 frames — add a UIThemeRuntime to the scene.");
+                        Logger.LogWarning(HelloDev.Logging.UIConstants.System, $"[{GetType().Name} '{name}'] No UIThemeRuntime found after 300 frames — add a UIThemeRuntime to the scene.");
                         yield break;
                     }
 
@@ -105,13 +105,13 @@ namespace HelloDev.UI.Default
             if (slot == null)
             {
                 ApplyColour(fallbackColour);
-                Logger.LogWarning("UI", $"[{GetType().Name} '{name}'] slot is not assigned — using fallback");
+                Logger.LogWarning(HelloDev.Logging.UIConstants.System, $"[{GetType().Name} '{name}'] slot is not assigned — using fallback");
                 yield break;
             }
 
             var colour = runtime.GetColour(slot);
             ApplyColour(colour);
-            Logger.LogVerbose("UI", $"[{GetType().Name} '<color=#AAAAAA>{name}</color>'] " +
+            Logger.LogVerbose(HelloDev.Logging.UIConstants.System, $"[{GetType().Name} '<color=#AAAAAA>{name}</color>'] " +
                 $"Slot '<color=#F0D080>{slot.DisplayName}</color>' -> {HexTag(colour)} " +
                 $"(db: '<color=#80C0F0>{runtime.Database?.name}</color>')");
             runtime.OnThemeChanged += HandleThemeChanged;
@@ -122,7 +122,7 @@ namespace HelloDev.UI.Default
             if (runtime == null || slot == null) return;
             var colour = runtime.GetColour(slot);
             ApplyColour(colour);
-            Logger.LogVerbose("UI", $"[{GetType().Name} '<color=#AAAAAA>{name}</color>'] " +
+            Logger.LogVerbose(HelloDev.Logging.UIConstants.System, $"[{GetType().Name} '<color=#AAAAAA>{name}</color>'] " +
                 $"Theme changed -> slot '<color=#F0D080>{slot.DisplayName}</color>' reapplied as {HexTag(colour)}");
         }
 
@@ -135,3 +135,4 @@ namespace HelloDev.UI.Default
         }
     }
 }
+

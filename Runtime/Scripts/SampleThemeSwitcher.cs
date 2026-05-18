@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using UnityEngine.UI;
 using Logger = HelloDev.Logging.Logger;
 
@@ -15,9 +15,9 @@ namespace HelloDev.UI.Default
 
             var db = UIThemeService.Default?.Database;
             if (db != null)
-                Logger.Log("UI", $"[SampleThemeSwitcher '<color=#AAAAAA>{name}</color>'] Ready — {db.Themes.Count} theme(s) in '<color=#80C0F0>{db.name}</color>'");
+                Logger.Log(HelloDev.Logging.UIConstants.System, $"[SampleThemeSwitcher '<color=#AAAAAA>{name}</color>'] Ready — {db.Themes.Count} theme(s) in '<color=#80C0F0>{db.name}</color>'");
             else
-                Logger.LogWarning("UI", $"[SampleThemeSwitcher '{name}'] UIThemeService not ready yet — themes will be unavailable until database loads");
+                Logger.LogWarning(HelloDev.Logging.UIConstants.System, $"[SampleThemeSwitcher '{name}'] UIThemeService not ready yet — themes will be unavailable until database loads");
         }
 
         private void SwitchTheme()
@@ -25,7 +25,7 @@ namespace HelloDev.UI.Default
             var runtime = UIThemeService.Default;
             if (runtime == null)
             {
-                Logger.LogWarning("UI", $"[SampleThemeSwitcher '{name}'] No database registered yet");
+                Logger.LogWarning(HelloDev.Logging.UIConstants.System, $"[SampleThemeSwitcher '{name}'] No database registered yet");
                 return;
             }
 

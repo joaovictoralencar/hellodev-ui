@@ -36,7 +36,7 @@ n        private IEnumerator LoadCoroutine()create
             if (loadMode == LoadMode.Direct)
             {
                 if (database == null)
-                    Logger.LogWarning("UI", $"[ColorDatabaseRuntime] Direct mode but database is null on {name}");
+                    Logger.LogWarning(HelloDev.Logging.UIConstants.System, $"[ColorDatabaseRuntime] Direct mode but database is null on {name}");
 
 n                Register();
                 yield break;
@@ -46,7 +46,7 @@ n#if USE_ADDRESSABLES
             if (loadMode == LoadMode.Addressables)
             {
                 if (string.IsNullOrEmpty(addressableKey))
-                    Logger.LogWarning("UI", $"[ColorDatabaseRuntime] Addressables key is empty on {name}");
+                    Logger.LogWarning(HelloDev.Logging.UIConstants.System, $"[ColorDatabaseRuntime] Addressables key is empty on {name}");
                 else
                 {
                     var handle = Addressables.LoadAssetAsync<ColorDatabase_SO>(addressableKey);
@@ -54,7 +54,7 @@ n#if USE_ADDRESSABLES
                     if (handle.Status == AsyncOperationStatus.Succeeded)
                         database = handle.Result;
                     else
-                        Logger.LogError("UI", $"[ColorDatabaseRuntime] Failed to load addressable '{addressableKey}'");
+                        Logger.LogError(HelloDev.Logging.UIConstants.System, $"[ColorDatabaseRuntime] Failed to load addressable '{addressableKey}'");
                 }
 
 n                Register();
@@ -64,7 +64,7 @@ n                Register();
 n            if (loadMode == LoadMode.Resources)
             {
                 if (string.IsNullOrEmpty(resourcesPath))
-                    Logger.LogWarning("UI", $"[ColorDatabaseRuntime] Resources path is empty on {name}");
+                    Logger.LogWarning(HelloDev.Logging.UIConstants.System, $"[ColorDatabaseRuntime] Resources path is empty on {name}");
                 else
                 {
                     var r = Resources.LoadAsync<ColorDatabase_SO>(resourcesPath);
@@ -88,7 +88,7 @@ n        public Color GetColor(string slotId)
         {
             if (database == null)
             {
-                Logger.LogWarning("UI", "[ColorDatabaseRuntime] No database loaded.");
+                Logger.LogWarning(HelloDev.Logging.UIConstants.System, "[ColorDatabaseRuntime] No database loaded.");
                 return Color.white;
             }
 
@@ -134,3 +134,4 @@ n        public static ColorDatabaseRuntime Get(string key)
         }
     }
 }
+

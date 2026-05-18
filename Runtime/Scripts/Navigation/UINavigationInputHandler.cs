@@ -59,7 +59,7 @@ namespace HelloDev.UI.Navigation
             _cancelAction.Enable();
 
             if (debug)
-                Logger.Log("UI", $"Cancel action created: keyboard={keyboardCancel}, gamepad={gamepadCancel}");
+                Logger.Log(HelloDev.Logging.UIConstants.System, $"Cancel action created: keyboard={keyboardCancel}, gamepad={gamepadCancel}");
         }
 
         private void DisposeCancelAction()
@@ -72,17 +72,17 @@ namespace HelloDev.UI.Navigation
             _cancelAction = null;
 
             if (debug)
-                Logger.Log("UI", "Cancel action disposed");
+                Logger.Log(HelloDev.Logging.UIConstants.System, "Cancel action disposed");
         }
 
         private void OnCancelPerformed(InputAction.CallbackContext ctx)
         {
             if (debug)
-                Logger.Log("UI", "Cancel input performed");
+                Logger.Log(HelloDev.Logging.UIConstants.System, "Cancel input performed");
 
             if (popupService != null && popupService.HasActivePopup)
             {
-                if (debug) Logger.Log("UI", "→ Routing to popup service");
+                if (debug) Logger.Log(HelloDev.Logging.UIConstants.System, "→ Routing to popup service");
                 popupService.HandleCancelInput();
                 return;
             }
@@ -90,12 +90,12 @@ namespace HelloDev.UI.Navigation
             var container = UIContainer.GetContainerForSelection();
             if (container != null)
             {
-                if (debug) Logger.Log("UI", $"→ Routing to container: {container.gameObject.name}");
+                if (debug) Logger.Log(HelloDev.Logging.UIConstants.System, $"→ Routing to container: {container.gameObject.name}");
                 container.HandleBack();
             }
             else if (debug)
             {
-                Logger.Log("UI", "→ No container found for current selection");
+                Logger.Log(HelloDev.Logging.UIConstants.System, "→ No container found for current selection");
             }
         }
 
@@ -106,3 +106,4 @@ namespace HelloDev.UI.Navigation
         public void SetPopupService(UIPopupService service) => popupService = service;
     }
 }
+

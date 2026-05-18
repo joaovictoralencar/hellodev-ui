@@ -72,7 +72,7 @@ namespace HelloDev.UI.Popups
         {
             if (config == null)
             {
-                Logger.LogError("UI", "Cannot setup popup: config is null");
+                Logger.LogError(HelloDev.Logging.UIConstants.System, "Cannot setup popup: config is null");
                 return;
             }
 
@@ -113,7 +113,7 @@ namespace HelloDev.UI.Popups
 
             SetDefaultSelection();
 
-            if (debug) Logger.Log("UI", $"Popup setup from config: {config.name}");
+            if (debug) Logger.Log(HelloDev.Logging.UIConstants.System, $"Popup setup from config: {config.name}");
         }
 
         /// <summary>Sets up the popup with runtime-provided strings.</summary>
@@ -160,13 +160,13 @@ namespace HelloDev.UI.Popups
 
             SetDefaultSelection();
 
-            if (debug) Logger.Log("UI", $"Popup setup with title: {title}");
+            if (debug) Logger.Log(HelloDev.Logging.UIConstants.System, $"Popup setup with title: {title}");
         }
 
         /// <summary>Closes the popup with the specified button index result.</summary>
         public void Close(int buttonIndex)
         {
-            if (debug) Logger.Log("UI", $"Popup closed with button index: {buttonIndex}");
+            if (debug) Logger.Log(HelloDev.Logging.UIConstants.System, $"Popup closed with button index: {buttonIndex}");
             _container.Hide();
             _onResult?.Invoke(buttonIndex);
         }
@@ -176,13 +176,13 @@ namespace HelloDev.UI.Popups
         {
             if (_cancelButtonIndex >= 0 && _cancelButtonIndex < _spawnedButtons.Count)
             {
-                if (debug) Logger.Log("UI", $"Popup HandleCancel -> button index: {_cancelButtonIndex}");
+                if (debug) Logger.Log(HelloDev.Logging.UIConstants.System, $"Popup HandleCancel -> button index: {_cancelButtonIndex}");
                 Close(_cancelButtonIndex);
             }
             else if (_spawnedButtons.Count > 0)
             {
                 int lastIndex = _spawnedButtons.Count - 1;
-                if (debug) Logger.Log("UI", $"Popup HandleCancel -> fallback to last button: {lastIndex}");
+                if (debug) Logger.Log(HelloDev.Logging.UIConstants.System, $"Popup HandleCancel -> fallback to last button: {lastIndex}");
                 Close(lastIndex);
             }
         }
@@ -214,7 +214,7 @@ namespace HelloDev.UI.Popups
                 button.OnClick.AddListener(() => Close(capturedIndex));
                 _spawnedButtons.Add(button);
 
-                if (debug) Logger.LogVerbose("UI", $"Created button [{index}]: {label}");
+                if (debug) Logger.LogVerbose(HelloDev.Logging.UIConstants.System, $"Created button [{index}]: {label}");
             }
         }
 
@@ -236,3 +236,4 @@ namespace HelloDev.UI.Popups
         #endregion
     }
 }
+

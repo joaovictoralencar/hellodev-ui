@@ -47,7 +47,7 @@ namespace HelloDev.UI.Default
             {
                 if (++frames >= 300)
                 {
-                    Logger.LogWarning("UI", $"[TMPFontBinder '{name}'] No UIThemeRuntime found after 300 frames.");
+                    Logger.LogWarning(HelloDev.Logging.UIConstants.System, $"[TMPFontBinder '{name}'] No UIThemeRuntime found after 300 frames.");
                     yield break;
                 }
 
@@ -68,7 +68,7 @@ namespace HelloDev.UI.Default
             if (target == null) target = GetComponent<TextMeshProUGUI>();
             if (target == null || style == null) return;
             style.ApplyTo(target, database);
-            Logger.LogVerbose("UI", $"[TMPFontBinder '<color=#AAAAAA>{name}</color>'] Applied style '{style.name}'");
+            Logger.LogVerbose(HelloDev.Logging.UIConstants.System, $"[TMPFontBinder '<color=#AAAAAA>{name}</color>'] Applied style '{style.name}'");
         }
 
 #if UNITY_EDITOR
@@ -84,3 +84,4 @@ namespace HelloDev.UI.Default
 #endif
     }
 }
+

@@ -36,7 +36,7 @@ namespace HelloDev.UI.Default
             if (loadMode == LoadMode.Direct)
             {
                 if (database == null)
-                    Logger.LogWarning("UI", $"[UIThemeRuntime] Direct mode but database is null on '{name}'");
+                    Logger.LogWarning(HelloDev.Logging.UIConstants.System, $"[UIThemeRuntime] Direct mode but database is null on '{name}'");
                 Register();
                 yield break;
             }
@@ -46,7 +46,7 @@ namespace HelloDev.UI.Default
 #if UNITY_ADDRESSABLES
                 if (addressableReference == null || !addressableReference.RuntimeKeyIsValid())
                 {
-                    Logger.LogWarning("UI", $"[UIThemeRuntime] Addressable reference is not set on '{name}'");
+                    Logger.LogWarning(HelloDev.Logging.UIConstants.System, $"[UIThemeRuntime] Addressable reference is not set on '{name}'");
                 }
                 else
                 {
@@ -55,10 +55,10 @@ namespace HelloDev.UI.Default
                     if (handle.Status == AsyncOperationStatus.Succeeded)
                         database = handle.Result;
                     else
-                        Logger.LogError("UI", $"[UIThemeRuntime] Failed to load addressable on '{name}'");
+                        Logger.LogError(HelloDev.Logging.UIConstants.System, $"[UIThemeRuntime] Failed to load addressable on '{name}'");
                 }
 #else
-                Logger.LogWarning("UI", $"[UIThemeRuntime] Addressables mode selected on '{name}', but com.unity.addressables is not available.");
+                Logger.LogWarning(HelloDev.Logging.UIConstants.System, $"[UIThemeRuntime] Addressables mode selected on '{name}', but com.unity.addressables is not available.");
 #endif
 
                 Register();
@@ -69,7 +69,7 @@ namespace HelloDev.UI.Default
             {
                 if (string.IsNullOrEmpty(resourcesPath))
                 {
-                    Logger.LogWarning("UI", $"[UIThemeRuntime] Resources path is empty on '{name}'");
+                    Logger.LogWarning(HelloDev.Logging.UIConstants.System, $"[UIThemeRuntime] Resources path is empty on '{name}'");
                 }
                 else
                 {
@@ -89,7 +89,7 @@ namespace HelloDev.UI.Default
         {
             if (database == null)
             {
-                Logger.LogWarning("UI", $"[UIThemeRuntime] Registered but database is null on '{name}'");
+                Logger.LogWarning(HelloDev.Logging.UIConstants.System, $"[UIThemeRuntime] Registered but database is null on '{name}'");
                 UIThemeService.SetDefault(this);
                 return;
             }
@@ -97,7 +97,7 @@ namespace HelloDev.UI.Default
             UIThemeLocator.Register(database.name, database, this);
             UIThemeService.SetDefault(this);
 
-            Logger.Log("UI", $"[UIThemeRuntime] '<color=#80C0F0>{database.name}</color>' ready — " +
+            Logger.Log(HelloDev.Logging.UIConstants.System, $"[UIThemeRuntime] '<color=#80C0F0>{database.name}</color>' ready — " +
                 $"{database.ColourSlots.Count} colour slot(s) | {database.FontSlots.Count} font slot(s) | " +
                 $"{database.Themes.Count} theme(s) | " +
                 $"active theme: '<color=#F0D080>{database.ActiveTheme?.name ?? "none"}</color>'");
@@ -107,7 +107,7 @@ namespace HelloDev.UI.Default
         {
             if (database == null)
             {
-                Logger.LogWarning("UI", $"[UIThemeRuntime] GetColour('{slot?.DisplayName}') called but database is null");
+                Logger.LogWarning(HelloDev.Logging.UIConstants.System, $"[UIThemeRuntime] GetColour('{slot?.DisplayName}') called but database is null");
                 return Color.white;
             }
 
@@ -124,7 +124,7 @@ namespace HelloDev.UI.Default
         {
             if (database == null || theme == null) return;
             database.ActiveTheme = theme;
-            Logger.Log("UI", $"[UIThemeRuntime] '<color=#80C0F0>{database.name}</color>' theme -> '<color=#F0D080>{theme.name}</color>'");
+            Logger.Log(HelloDev.Logging.UIConstants.System, $"[UIThemeRuntime] '<color=#80C0F0>{database.name}</color>' theme -> '<color=#F0D080>{theme.name}</color>'");
             OnThemeChanged?.Invoke(theme);
         }
 
@@ -140,7 +140,7 @@ namespace HelloDev.UI.Default
                 }
             }
 
-            Logger.LogWarning("UI", $"[UIThemeRuntime] No theme named '{themeName}' in '{database.name}'");
+            Logger.LogWarning(HelloDev.Logging.UIConstants.System, $"[UIThemeRuntime] No theme named '{themeName}' in '{database.name}'");
         }
 
         private void OnDestroy()
@@ -148,7 +148,7 @@ namespace HelloDev.UI.Default
             if (database != null)
                 UIThemeLocator.Unregister(database.name, database, this);
             UIThemeService.ClearDefault(this);
-            Logger.Log("UI", $"[UIThemeRuntime] '{database?.name ?? "database"}' unregistered");
+            Logger.Log(HelloDev.Logging.UIConstants.System, $"[UIThemeRuntime] '{database?.name ?? "database"}' unregistered");
         }
     }
 
@@ -228,3 +228,4 @@ namespace HelloDev.UI.Default
         }
     }
 }
+

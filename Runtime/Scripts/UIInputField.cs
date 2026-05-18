@@ -40,7 +40,7 @@ namespace HelloDev.UI.Default
             }
             else
             {
-                Logger.LogWarning("UI", $"[UIInputField] TMP_InputField component missing on '{name}'. Input functionality will be limited.");
+                Logger.LogWarning(HelloDev.Logging.UIConstants.System, $"[UIInputField] TMP_InputField component missing on '{name}'. Input functionality will be limited.");
             }
 
             base.Awake();
@@ -89,7 +89,7 @@ namespace HelloDev.UI.Default
             }
             else
             {
-                Logger.LogWarning("UI", $"[UIInputField] SetText called but TMP_InputField missing on '{name}'");
+                Logger.LogWarning(HelloDev.Logging.UIConstants.System, $"[UIInputField] SetText called but TMP_InputField missing on '{name}'");
             }
         }
 

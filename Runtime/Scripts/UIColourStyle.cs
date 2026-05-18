@@ -82,7 +82,7 @@ namespace HelloDev.UI.Default
             {
                 if (++frames >= 300)
                 {
-                    Logger.LogWarning("UI", $"[UIColourStyle '{name}'] No UIThemeRuntime found after 300 frames — add a UIThemeRuntime to the scene.");
+                    Logger.LogWarning(HelloDev.Logging.UIConstants.System, $"[UIColourStyle '{name}'] No UIThemeRuntime found after 300 frames — add a UIThemeRuntime to the scene.");
                     yield break;
                 }
 
@@ -212,3 +212,4 @@ namespace HelloDev.UI.Default
 #endif
     }
 }
+

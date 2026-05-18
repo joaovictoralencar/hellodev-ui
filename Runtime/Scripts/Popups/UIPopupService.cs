@@ -106,7 +106,7 @@ namespace HelloDev.UI.Popups
         {
             if (config == null)
             {
-                Logger.LogError("UI", "Cannot show popup: config is null");
+                Logger.LogError(HelloDev.Logging.UIConstants.System, "Cannot show popup: config is null");
                 return;
             }
 
@@ -148,7 +148,7 @@ namespace HelloDev.UI.Popups
             {
                 if (debug)
                 {
-                    Logger.Log("UI", "UIPopupService handling cancel input");
+                    Logger.Log(HelloDev.Logging.UIConstants.System, "UIPopupService handling cancel input");
                 }
 
                 _currentPopup.HandleCancel();
@@ -164,7 +164,7 @@ namespace HelloDev.UI.Popups
             {
                 if (debug)
                 {
-                    Logger.Log("UI", "Force closing current popup");
+                    Logger.Log(HelloDev.Logging.UIConstants.System, "Force closing current popup");
                 }
 
                 if (enablePooling)
@@ -202,7 +202,7 @@ namespace HelloDev.UI.Popups
 
             if (debug)
             {
-                Logger.Log("UI", $"Popup request enqueued. Queue size: {_queue.Count}");
+                Logger.Log(HelloDev.Logging.UIConstants.System, $"Popup request enqueued. Queue size: {_queue.Count}");
             }
 
             ProcessQueue();
@@ -240,7 +240,7 @@ namespace HelloDev.UI.Popups
 #endif
             if (prefab == null && !usingAddressable)
             {
-                Logger.LogError("UI", "Cannot show popup: no prefab available");
+                Logger.LogError(HelloDev.Logging.UIConstants.System, "Cannot show popup: no prefab available");
                 RestoreFocus();
                 ProcessQueue();
                 return;
@@ -289,7 +289,7 @@ namespace HelloDev.UI.Popups
                 _currentPopup = popupGO.GetComponent<UIPopup>();
 n                if (_currentPopup == null)
                 {
-                    Logger.LogError("UI", "Instantiated prefab does not have UIPopup component");
+                    Logger.LogError(HelloDev.Logging.UIConstants.System, "Instantiated prefab does not have UIPopup component");
 #if UNITY_ADDRESSABLESn                    if (popupGO != null) Destroy(popupGO);
 #else
                     Destroy(popupGO);
@@ -330,7 +330,7 @@ namespace HelloDev.UI.Popups
 
             if (debug)
             {
-                Logger.Log("UI", "Popup shown");
+                Logger.Log(HelloDev.Logging.UIConstants.System, "Popup shown");
             }
         }
 
@@ -369,7 +369,7 @@ namespace HelloDev.UI.Popups
                     if (handle.Status == UnityEngine.ResourceManagement.AsyncOperations.AsyncOperationStatus.Succeeded)
                         _addressablePrefab = handle.Result;
                     else
-                        Logger.LogWarning("UI", $"[UIPopupService] Failed loading addressable popup prefab on '{name}'");
+                        Logger.LogWarning(HelloDev.Logging.UIConstants.System, $"[UIPopupService] Failed loading addressable popup prefab on '{name}'");
                 };
             }
         }
@@ -381,7 +381,7 @@ namespace HelloDev.UI.Popups
             popup.gameObject.SetActive(false);
             popup.transform.SetParent(transform, false);
             _pool.Add(popup);
-            if (debug) Logger.LogVerbose("UI", $"Returned popup to pool: {popup.name}");
+            if (debug) Logger.LogVerbose(HelloDev.Logging.UIConstants.System, $"Returned popup to pool: {popup.name}");
         }
 
         private UIPopup GetPrefab(PopupRequest request)
@@ -408,7 +408,7 @@ namespace HelloDev.UI.Popups
 
                 if (debug && _savedSelection != null)
                 {
-                    Logger.LogVerbose("UI", $"Saved focus: {_savedSelection.name}");
+                    Logger.LogVerbose(HelloDev.Logging.UIConstants.System, $"Saved focus: {_savedSelection.name}");
                 }
             }
         }
@@ -424,7 +424,7 @@ namespace HelloDev.UI.Popups
 
                     if (debug)
                     {
-                        Logger.LogVerbose("UI", $"Restored focus: {_savedSelection.name}");
+                        Logger.LogVerbose(HelloDev.Logging.UIConstants.System, $"Restored focus: {_savedSelection.name}");
                     }
                 }
 

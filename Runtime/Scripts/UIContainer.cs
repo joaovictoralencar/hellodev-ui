@@ -215,7 +215,7 @@ namespace HelloDev.UI.Default
 
             if (Group && !fromGroup)
             {
-                Logger.LogWarning("UI", "This container has a group. Use group methods to hide it instead.");
+                Logger.LogWarning(HelloDev.Logging.UIConstants.System, "This container has a group. Use group methods to hide it instead.");
                 return;
             }
 
@@ -266,7 +266,7 @@ namespace HelloDev.UI.Default
 
             if (Group && !fromGroup)
             {
-                Logger.LogWarning("UI", "This container has a group. Use group methods to show it instead.");
+                Logger.LogWarning(HelloDev.Logging.UIConstants.System, "This container has a group. Use group methods to show it instead.");
                 return;
             }
 
@@ -352,7 +352,7 @@ namespace HelloDev.UI.Default
 
             if (Group && !fromGroup)
             {
-                Logger.LogWarning("UI", "This container has a group. Use group methods to show it instead.");
+                Logger.LogWarning(HelloDev.Logging.UIConstants.System, "This container has a group. Use group methods to show it instead.");
                 return;
             }
 
@@ -421,7 +421,7 @@ namespace HelloDev.UI.Default
 
             if (Group && !fromGroup)
             {
-                Logger.LogWarning("UI", "This container has a group. Use group methods to hide it instead.");
+                Logger.LogWarning(HelloDev.Logging.UIConstants.System, "This container has a group. Use group methods to hide it instead.");
                 return;
             }
 
