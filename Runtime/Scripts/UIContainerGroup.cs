@@ -40,6 +40,7 @@ namespace HelloDev.UI.Default
         [SerializeField] private List<UIContainer> containers = new List<UIContainer>();
 
         private UIContainer currentContainer;
+        private bool firstShowHandled = false;
         private Canvas canvas;
         private CanvasGroup canvasGroup;
 
@@ -115,6 +116,12 @@ namespace HelloDev.UI.Default
 
         public void ShowFirstEnabledContainerHandler(bool instant, Action onShow)
         {
+            if (firstShowHandled)
+            {
+                onShow?.Invoke();
+                return;
+            }
+
             if (currentContainer != null && currentContainer.IsVisible())
             {
                 onShow?.Invoke();
@@ -154,6 +161,7 @@ namespace HelloDev.UI.Default
             }
 
             ShowContainer(tempFirstActiveContainer.ID, instant, onShow);
+            firstShowHandled = true;
         }
 
         public void ShowContainer(string id, bool instant = false, Action onShow = null, bool alsoHideChildren = false)
@@ -188,7 +196,6 @@ namespace HelloDev.UI.Default
                     // After all are hidden, show the requested container
                     ShowContainerInternal(containerToShow, instant, onShow);
                 }, alsoHideChildren);
-                ShowContainerInternal(containerToShow, instant, onShow);
 
                 // HideAll(instant, containerToShow, () =>
                 // {
