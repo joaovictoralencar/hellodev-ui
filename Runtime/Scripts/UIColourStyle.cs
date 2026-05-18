@@ -28,14 +28,26 @@ namespace HelloDev.UI.Default
         [Tooltip("The label text driven by the Text slot. Auto-wired if left empty.")]
         [SerializeField] private TMP_Text labelText;
 
+        [Tooltip("Optional: TMP Input Field to bind text/placeholder/caret colours.")]
+        [SerializeField] private TMP_InputField inputField;
+
+        [Header("Fallback (used when no theme/database is available)")]
+        [SerializeField] private bool useFallbackColours = false;
+        [SerializeField] private Color bgFallback = Color.white;
+        [SerializeField] private Color textFallback = Color.black;
+
         public UISelectableStyle_SO Style => style;
 
         public void Apply(UISelectable.SelectableState state)
         {
-            if (style == null || runtime == null) return;
+            if (style == null) return;
             var stateStyle = style.GetStateStyle(state);
-            if (stateStyle != null)
+            if (stateStyle == null) return;
+
+            if (runtime != null)
                 ApplyWithRuntime(stateStyle, runtime);
+            else
+                ApplyWithFallback(stateStyle);
         }
 
         private UIThemeRuntime runtime;
@@ -49,6 +61,8 @@ namespace HelloDev.UI.Default
                 backgroundGraphic = GetComponent<Graphic>();
             if (labelText == null)
                 labelText = GetComponentInChildren<TMP_Text>(includeInactive: true);
+            if (inputField == null)
+                inputField = GetComponent<TMP_InputField>();
             selectable = GetComponent<UISelectable>();
         }
 
@@ -82,7 +96,7 @@ namespace HelloDev.UI.Default
             {
                 if (++frames >= 300)
                 {
-                    Logger.LogWarning(HelloDev.Logging.UIConstants.System, $"[UIColourStyle '{name}'] No UIThemeRuntime found after 300 frames — add a UIThemeRuntime to the scene.");
+                    Logger.LogWarning(HelloDev.Logging.UIConstants.System, "[UIColourStyle] No UIThemeRuntime found after 300 frames — add a UIThemeRuntime to the scene.");
                     yield break;
                 }
 
@@ -118,6 +132,57 @@ namespace HelloDev.UI.Default
 
             if (labelText != null && stateStyle.Text != null)
                 labelText.color = rt.GetColour(stateStyle.Text);
+
+            // If this style is attached to a TMP_InputField, apply text/placeholder/caret colours too.
+            if (inputField != null && stateStyle.Text != null)
+            {
+                var textColour = rt.GetColour(stateStyle.Text);
+                if (inputField.textComponent != null)
+                    inputField.textComponent.color = textColour;
+n                if (inputField.placeholder is TMP_Text ph)
+                    ph.color = textColour;
+n                try
+                {
+                    inputField.caretColor = textColour;
+                }
+                catch { /* some TMP versions might not expose caretColor setter, ignore */ }
+            }
+        }
+
+        private void ApplyWithFallback(UISelectableStyle_SO.StateStyle stateStyle)
+        {
+            // If the style references slots but no runtime/database is available, use configured fallbacks if provided.
+            Color bg = useFallbackColours ? bgFallback : Color.white;
+            Color txt = useFallbackColours ? textFallback : Color.black;
+
+            if (backgroundGraphic != null)
+            {
+                if (stateStyle.Background != null)
+                    backgroundGraphic.color = bg;
+                else
+                    backgroundGraphic.color = bg;
+
+                var selectableGraphic = GetComponent<UnityEngine.UI.Selectable>();
+                if (selectableGraphic != null)
+                {
+                    var colourBlock = selectableGraphic.colors;
+                    colourBlock.normalColor = colourBlock.highlightedColor = colourBlock.selectedColor = colourBlock.pressedColor = backgroundGraphic.color;
+                    selectableGraphic.colors = colourBlock;
+                    backgroundGraphic.CrossFadeColor(backgroundGraphic.color, 0f, true, true);
+                }
+            }
+
+            if (labelText != null)
+                labelText.color = txt;
+
+            if (inputField != null)
+            {
+                if (inputField.textComponent != null)
+                    inputField.textComponent.color = txt;
+                if (inputField.placeholder is TMP_Text ph)
+                    ph.color = txt;
+                try { inputField.caretColor = txt; } catch { }
+            }
         }
 
         private void ApplyWithDatabase(UISelectableStyle_SO.StateStyle stateStyle, UIDatabase_SO db,

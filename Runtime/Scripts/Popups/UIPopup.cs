@@ -113,7 +113,7 @@ namespace HelloDev.UI.Popups
 
             SetDefaultSelection();
 
-            if (debug) Logger.Log(HelloDev.Logging.UIConstants.System, $"Popup setup from config: {config.name}");
+            if (debug) Logger.Log(HelloDev.Logging.UIConstants.System, "Popup setup from config: " + (config != null ? config.name : "null"));
         }
 
         /// <summary>Sets up the popup with runtime-provided strings.</summary>
@@ -160,13 +160,13 @@ namespace HelloDev.UI.Popups
 
             SetDefaultSelection();
 
-            if (debug) Logger.Log(HelloDev.Logging.UIConstants.System, $"Popup setup with title: {title}");
+            if (debug) Logger.Log(HelloDev.Logging.UIConstants.System, "Popup setup with title: " + (title ?? string.Empty));
         }
 
         /// <summary>Closes the popup with the specified button index result.</summary>
         public void Close(int buttonIndex)
         {
-            if (debug) Logger.Log(HelloDev.Logging.UIConstants.System, $"Popup closed with button index: {buttonIndex}");
+            if (debug) Logger.Log(HelloDev.Logging.UIConstants.System, "Popup closed with button index: " + buttonIndex);
             _container.Hide();
             _onResult?.Invoke(buttonIndex);
         }
@@ -176,13 +176,13 @@ namespace HelloDev.UI.Popups
         {
             if (_cancelButtonIndex >= 0 && _cancelButtonIndex < _spawnedButtons.Count)
             {
-                if (debug) Logger.Log(HelloDev.Logging.UIConstants.System, $"Popup HandleCancel -> button index: {_cancelButtonIndex}");
+                if (debug) Logger.Log(HelloDev.Logging.UIConstants.System, "Popup HandleCancel -> button index: " + _cancelButtonIndex);
                 Close(_cancelButtonIndex);
             }
             else if (_spawnedButtons.Count > 0)
             {
                 int lastIndex = _spawnedButtons.Count - 1;
-                if (debug) Logger.Log(HelloDev.Logging.UIConstants.System, $"Popup HandleCancel -> fallback to last button: {lastIndex}");
+                if (debug) Logger.Log(HelloDev.Logging.UIConstants.System, "Popup HandleCancel -> fallback to last button: " + lastIndex);
                 Close(lastIndex);
             }
         }
@@ -214,14 +214,20 @@ namespace HelloDev.UI.Popups
                 button.OnClick.AddListener(() => Close(capturedIndex));
                 _spawnedButtons.Add(button);
 
-                if (debug) Logger.LogVerbose(HelloDev.Logging.UIConstants.System, $"Created button [{index}]: {label}");
+                if (debug) Logger.LogVerbose(HelloDev.Logging.UIConstants.System, "Created button [" + index + "]: " + (label ?? string.Empty));
             }
         }
 
         private void ClearButtons()
         {
             foreach (var button in _spawnedButtons)
-                if (button != null) Destroy(button.gameObject);
+            {
+                if (button != null)
+                {
+                    // Remove listeners by destroying the GameObject to avoid leaks.
+                    Destroy(button.gameObject);
+                }
+            }
             _spawnedButtons.Clear();
         }
 
@@ -234,6 +240,29 @@ namespace HelloDev.UI.Popups
         }
 
         #endregion
+
+        /// <summary>
+        /// Prepare popup for reuse by pooling: clear spawned buttons, callbacks, and modal state.
+        /// </summary>
+        public void ResetForReuse()
+        {
+            _onResult = null;
+            _defaultButtonIndex = -1;
+            _cancelButtonIndex = -1;
+            ClearButtons();
+
+            if (modalBlocker != null)
+            {
+                modalBlocker.alpha = 0f;
+                modalBlocker.blocksRaycasts = false;
+                modalBlocker.interactable = false;
+                modalBlocker.gameObject.SetActive(false);
+            }
+
+            if (titleText != null) titleText.gameObject.SetActive(false);
+            if (messageText != null) messageText.gameObject.SetActive(false);
+            if (iconImage != null) iconImage.gameObject.SetActive(false);
+        }
     }
 }
 
