@@ -26,6 +26,7 @@
   "optionalDependencies": {
     "com.kyrylokuzyk.primetween": ">=1.0.0",
     "com.unity.inputsystem": ">=1.0.0",
-    "com.unity.localization": ">=1.0.0"
+    "com.unity.localization": ">=1.0.0",
+    "com.unity.addressables": ">=1.19.19"
   }
 }

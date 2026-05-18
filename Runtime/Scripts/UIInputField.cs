@@ -1,7 +1,9 @@
 using HelloDev.Utils;
+using HelloDev.Logging;
 using UnityEngine;
 using TMPro;
 using UnityEngine.Events;
+using Logger = HelloDev.Logging.Logger;
 
 namespace HelloDev.UI.Default
 {
@@ -35,6 +37,10 @@ namespace HelloDev.UI.Default
                 _inputField.onEndEdit.SafeSubscribe(HandleEndEdit);
                 _inputField.onSelect.SafeSubscribe(HandleSelect);
                 _inputField.onDeselect.SafeSubscribe(HandleDeselect);
+            }
+            else
+            {
+                Logger.LogWarning("UI", $"[UIInputField] TMP_InputField component missing on '{name}'. Input functionality will be limited.");
             }
 
             base.Awake();
@@ -78,7 +84,13 @@ namespace HelloDev.UI.Default
         public void SetText(string text)
         {
             if (_inputField)
+            {
                 _inputField.text = text;
+            }
+            else
+            {
+                Logger.LogWarning("UI", $"[UIInputField] SetText called but TMP_InputField missing on '{name}'");
+            }
         }
 
         public void ActivateInputField()

@@ -51,6 +51,9 @@ namespace HelloDev.UI.Default
 
         private UIColourStyle _colourStyle;
 
+        /// <summary>Public accessor for attached UIColourStyle. Controls should rely on the central style application in UpdateState()</summary>
+        public UIColourStyle ColourStyle => _colourStyle;
+
         // ── Lifecycle ────────────────────────────────────────────────────────────
 
         public abstract bool IsInteractable { get; }

@@ -16,6 +16,11 @@ namespace HelloDev.UI.Popups
         [Header("Prefabs")] [Tooltip("Default popup prefab used when no custom prefab is specified.")] [SerializeField]
         private UIPopup defaultPrefab;
 
+#if UNITY_ADDRESSABLES
+        [Tooltip("Optional addressable reference for popup prefab (used if defaultPrefab is null).")]
+        [SerializeField] private UnityEngine.AddressableAssets.AssetReference popupAddressable;
+#endif
+
         [Tooltip("Parent transform for spawned popups.")] [SerializeField]
         private Transform popupContainer;
 
@@ -25,13 +30,19 @@ namespace HelloDev.UI.Popups
         [SerializeField] private PopupRequestEvent requestEvent;
 #endif
 
-        [Header("Debug")] [SerializeField] private bool debug;
+        [Header("Pooling & Debug")]
+        [Tooltip("Enable simple reuse pool for popups (opt-in). ")] [SerializeField] private bool enablePooling = false;
+        [SerializeField] private bool debug = false;
 
         #region Private Fields
 
         private readonly Queue<PopupRequest> _queue = new();
         private UIPopup _currentPopup;
         private GameObject _savedSelection;
+        private readonly List<UIPopup> _pool = new();
+#if UNITY_ADDRESSABLES
+        private GameObject _addressablePrefab;
+#endif
 
         #endregion
 
@@ -76,7 +87,10 @@ namespace HelloDev.UI.Popups
             // Clean up current popup
             if (_currentPopup != null)
             {
-                Destroy(_currentPopup.gameObject);
+                if (enablePooling)
+                    ReturnToPool(_currentPopup);
+                else
+                    Destroy(_currentPopup.gameObject);
                 _currentPopup = null;
             }
         }
@@ -153,8 +167,17 @@ namespace HelloDev.UI.Popups
                     Logger.Log("UI", "Force closing current popup");
                 }
 
-                Destroy(_currentPopup.gameObject);
-                _currentPopup = null;
+                if (enablePooling)
+                {
+                    ReturnToPool(_currentPopup);
+                    _currentPopup = null;
+                }
+                else
+                {
+                    Destroy(_currentPopup.gameObject);
+                    _currentPopup = null;
+                }
+
                 RestoreFocus();
                 ProcessQueue();
             }
@@ -211,7 +234,11 @@ namespace HelloDev.UI.Popups
 
             // Determine which prefab to use
             UIPopup prefab = GetPrefab(request);
-            if (prefab == null)
+#if UNITY_ADDRESSABLESn            bool usingAddressable = prefab == null && _addressablePrefab != null;
+#else
+            const bool usingAddressable = false;
+#endif
+            if (prefab == null && !usingAddressable)
             {
                 Logger.LogError("UI", "Cannot show popup: no prefab available");
                 RestoreFocus();
@@ -222,17 +249,55 @@ namespace HelloDev.UI.Popups
             // Get container parent
             Transform parent = popupContainer != null ? popupContainer : transform;
 
-            // Instantiate popup
-            var popupGO = Instantiate(prefab.gameObject, parent);
-            _currentPopup = popupGO.GetComponent<UIPopup>();
-
-            if (_currentPopup == null)
+            // Instantiate or reuse popup
+            UIPopup instance = null;
+            if (enablePooling)
             {
-                Logger.LogError("UI", "Instantiated prefab does not have UIPopup component");
-                Destroy(popupGO);
-                RestoreFocus();
-                ProcessQueue();
-                return;
+                // Try reuse a pooled instance that matches the prefab name
+                for (int i = _pool.Count - 1; i >= 0; i--)
+                {
+                    if (_pool[i] != null && _pool[i].gameObject.name.Contains(prefab != null ? prefab.name : string.Empty))
+                    {
+                        instance = _pool[i];
+                        _pool.RemoveAt(i);
+                        break;
+                    }
+                }
+            }
+
+            GameObject popupGO = null;
+#if UNITY_ADDRESSABLES
+            if (instance == null && _addressablePrefab != null && prefab == defaultPrefab)
+            {
+                popupGO = Instantiate(_addressablePrefab, parent);
+            }
+            else
+#endif
+            if (instance == null)
+            {
+                popupGO = Instantiate(prefab.gameObject, parent);
+            }
+
+            if (instance != null)
+            {
+                _currentPopup = instance;
+                _currentPopup.transform.SetParent(parent, false);
+                _currentPopup.gameObject.SetActive(true);
+            }
+            else
+            {
+                _currentPopup = popupGO.GetComponent<UIPopup>();
+n                if (_currentPopup == null)
+                {
+                    Logger.LogError("UI", "Instantiated prefab does not have UIPopup component");
+#if UNITY_ADDRESSABLESn                    if (popupGO != null) Destroy(popupGO);
+#else
+                    Destroy(popupGO);
+#endif
+                    RestoreFocus();
+                    ProcessQueue();
+                    return;
+                }
             }
 
             // Setup popup based on request type
@@ -279,7 +344,10 @@ namespace HelloDev.UI.Popups
                 // Clean up
                 if (_currentPopup != null)
                 {
-                    Destroy(_currentPopup.gameObject);
+                    if (enablePooling)
+                        ReturnToPool(_currentPopup);
+                    else
+                        Destroy(_currentPopup.gameObject);
                     _currentPopup = null;
                 }
 
@@ -289,6 +357,31 @@ namespace HelloDev.UI.Popups
                 // Process next in queue
                 ProcessQueue();
             };
+        }
+
+#if UNITY_ADDRESSABLES
+        private void Start()
+        {
+            if (popupAddressable != null)
+            {
+                popupAddressable.LoadAssetAsync<GameObject>().Completed += handle =>
+                {
+                    if (handle.Status == UnityEngine.ResourceManagement.AsyncOperations.AsyncOperationStatus.Succeeded)
+                        _addressablePrefab = handle.Result;
+                    else
+                        Logger.LogWarning("UI", $"[UIPopupService] Failed loading addressable popup prefab on '{name}'");
+                };
+            }
+        }
+#endif
+
+        private void ReturnToPool(UIPopup popup)
+        {
+            if (popup == null) return;
+            popup.gameObject.SetActive(false);
+            popup.transform.SetParent(transform, false);
+            _pool.Add(popup);
+            if (debug) Logger.LogVerbose("UI", $"Returned popup to pool: {popup.name}");
         }
 
         private UIPopup GetPrefab(PopupRequest request)
