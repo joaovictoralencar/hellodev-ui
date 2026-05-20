@@ -210,9 +210,6 @@ namespace HelloDev.UI.Default
         {
             KillAnimation();
 
-            if (!gameObject.activeSelf && !invokeCallbacks)
-                return;
-
             if (Group && !fromGroup)
             {
                 Logger.LogWarning("UI", "This container has a group. Use group methods to hide it instead.");
@@ -416,7 +413,7 @@ namespace HelloDev.UI.Default
             // If not active, just call callbacks if needed
             if (!IsVisible())
             {
-                if (invokeCallbacks) onHide?.Invoke();
+                InstaHide(fromGroup, invokeCallbacks);
                 return;
             }
 
@@ -542,7 +539,7 @@ namespace HelloDev.UI.Default
 
         public bool IsVisible()
         {
-            return gameObject.activeInHierarchy && Canvas.enabled && CanvasGroup.alpha > 0 && !IsAnimating();
+            return Canvas.enabled && CanvasGroup.alpha > 0 && !IsAnimating();
         }
 
         public bool IsAnimating()
