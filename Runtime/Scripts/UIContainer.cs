@@ -171,6 +171,12 @@ namespace HelloDev.UI.Default
         private Action pendingShowCallback = null;
         private GameObject _lastSelectedObject;
 
+        // Tracks settled visibility state manually.
+        // True only after a show animation completes or InstaShow runs.
+        // False after hide completes, InstaHide, or external deactivation via OnDisable.
+        // NOT true during animations — use IsAnimating() for that.
+        private bool _isVisible = false;
+
         #endregion
 
         protected virtual void Awake()
@@ -222,6 +228,9 @@ namespace HelloDev.UI.Default
             // Remove from active containers
             _activeContainers.Remove(this);
 
+            // Mark as hidden before SetActive(false) so OnDisable doesn't race
+            _isVisible = false;
+
             // Apply hidden state
             CanvasGroup.alpha = 0f;
             if (disableInteractionsWhenHidden)
@@ -257,8 +266,8 @@ namespace HelloDev.UI.Default
             // Cancel any pending animations
             KillAnimation();
 
-            // If we're already visible and callbacks aren't needed, skip
-            if (IsVisible() && !invokeCallbacks && onShowCallback == null)
+            // If we're already settled-visible and callbacks aren't needed, skip
+            if (_isVisible && !invokeCallbacks && onShowCallback == null)
                 return;
 
             if (Group && !fromGroup)
@@ -273,6 +282,9 @@ namespace HelloDev.UI.Default
             CanvasGroup.alpha = 1f;
             CanvasGroup.interactable = true;
             CanvasGroup.blocksRaycasts = true;
+
+            // Settled: fully visible, no animation
+            _isVisible = true;
 
             // Add to active containers
             if (!_activeContainers.Contains(this))
@@ -302,8 +314,10 @@ namespace HelloDev.UI.Default
         {
             //if (debug) Debug.Log($"<color=cyan>UIContainer {gameObject.name} enabled</color>", gameObject);
 
-            // Check if we have a pending show
-            if (hasPendingShow)
+            // Check if we have a pending show.
+            // Guard: if already visible (e.g. GO was re-enabled externally while settled),
+            // skip to avoid re-triggering show callbacks unnecessarily.
+            if (hasPendingShow && !_isVisible)
             {
                 Show(Group != null, true, pendingShowCallback);
                 hasPendingShow = false;
@@ -317,6 +331,11 @@ namespace HelloDev.UI.Default
 
             // If we have an animation in progress, kill it
             KillAnimation();
+
+            // Handle external deactivation (e.g. parent GO disabled, scene unload).
+            // InstaHide sets this before calling SetActive(false), so this is a no-op
+            // in the normal flow but catches any external disable.
+            _isVisible = false;
         }
 
         public void ShowContainer(bool invokeCallbacks = true)
@@ -335,13 +354,18 @@ namespace HelloDev.UI.Default
             // Kill any existing animation
             KillAnimation();
             
-            // If gameobject is disabled, store as pending and exit
-            if (!IsVisible())
+            // GO is inactive or canvas disabled — can't tween yet.
+            // Queue as pending: OnEnable will resume once the GO is active.
+            // Note: this is intentionally NOT checking _isVisible, because a hide animation
+            // interrupted by KillAnimation() leaves the GO active but _isVisible = false.
+            // In that case we want to fall through and animate directly, not re-queue.
+            if (!gameObject.activeSelf || !Canvas.enabled)
             {
                 hasPendingShow = true;
                 pendingInstant = false;
+                Canvas.enabled = true;
                 pendingShowCallback = onShowCallback;
-
+                
                 // Enable the gameObject to trigger OnEnable where we'll resume
                 gameObject.SetActive(true);
                 if (invokeCallbacks) onStartShow?.Invoke();
@@ -353,8 +377,6 @@ namespace HelloDev.UI.Default
                 Logger.LogWarning("UI", "This container has a group. Use group methods to show it instead.");
                 return;
             }
-
-  
 
             // Set animation in progress flag
             animationInProgress = true;
@@ -387,6 +409,9 @@ namespace HelloDev.UI.Default
                 {
                     animationInProgress = false;
 
+                    // Settled: animation done, container is fully visible
+                    _isVisible = true;
+
                     if (debug && Group != null)
                     {
                         Debug.Log($"<color=cyan>UIContainerGroup [{Group.GroupID}] opened {ID}</color>", gameObject);
@@ -410,8 +435,9 @@ namespace HelloDev.UI.Default
             // Kill any existing animation
             KillAnimation();
             
-            // If not active, just call callbacks if needed
-            if (!IsVisible())
+            // Not in a settled-visible state — nothing animated to hide.
+            // InstaHide cleans up any partial state (alpha, canvas, GO active).
+            if (!_isVisible)
             {
                 InstaHide(fromGroup, invokeCallbacks);
                 return;
@@ -462,6 +488,9 @@ namespace HelloDev.UI.Default
                 .OnComplete(() =>
                 {
                     animationInProgress = false;
+
+                    // Settled: animation done, container is fully hidden
+                    _isVisible = false;
 
                     Canvas.enabled = false;
                     gameObject.SetActive(false);
@@ -537,10 +566,12 @@ namespace HelloDev.UI.Default
             }
         }
 
-        public bool IsVisible()
-        {
-            return Canvas.enabled && CanvasGroup.alpha > 0 && !IsAnimating();
-        }
+        /// <summary>
+        /// Returns true only when the container has fully settled into a visible state
+        /// (show animation completed or InstaShow ran). False during animations, while
+        /// hidden, or while pending activation.
+        /// </summary>
+        public bool IsVisible() => _isVisible;
 
         public bool IsAnimating()
         {
