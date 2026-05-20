@@ -261,7 +261,7 @@ namespace HelloDev.UI.Default
             KillAnimation();
 
             // If we're already visible and callbacks aren't needed, skip
-            if (gameObject.activeSelf && CanvasGroup.alpha == 1f && !invokeCallbacks && onShowCallback == null)
+            if (IsVisible() && !invokeCallbacks && onShowCallback == null)
                 return;
 
             if (Group && !fromGroup)
