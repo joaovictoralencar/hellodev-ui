@@ -542,7 +542,7 @@ namespace HelloDev.UI.Default
 
         public bool IsVisible()
         {
-            return gameObject.activeSelf && Canvas.enabled && CanvasGroup.alpha > 0 && !IsAnimating();
+            return gameObject.activeInHierarchy && Canvas.enabled && CanvasGroup.alpha > 0 && !IsAnimating();
         }
 
         public bool IsAnimating()
