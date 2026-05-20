@@ -339,7 +339,7 @@ namespace HelloDev.UI.Default
             KillAnimation();
             
             // If gameobject is disabled, store as pending and exit
-            if (!gameObject.activeInHierarchy)
+            if (!IsVisible())
             {
                 hasPendingShow = true;
                 pendingInstant = false;
@@ -414,7 +414,7 @@ namespace HelloDev.UI.Default
             KillAnimation();
             
             // If not active, just call callbacks if needed
-            if (!gameObject.activeInHierarchy)
+            if (!IsVisible())
             {
                 if (invokeCallbacks) onHide?.Invoke();
                 return;
