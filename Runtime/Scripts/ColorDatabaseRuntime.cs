@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using HelloDev.Loader;
 using Logger = HelloDev.Logging.Logger;
 #if USE_ADDRESSABLES
 using UnityEngine.AddressableAssets;
@@ -49,12 +50,16 @@ n#if USE_ADDRESSABLES
                     Logger.LogWarning(HelloDev.Logging.UIConstants.System, $"[ColorDatabaseRuntime] Addressables key is empty on {name}");
                 else
                 {
-                    var handle = Addressables.LoadAssetAsync<ColorDatabase_SO>(addressableKey);
-                    yield return handle;
-                    if (handle.Status == AsyncOperationStatus.Succeeded)
-                        database = handle.Result;
-                    else
-                        Logger.LogError(HelloDev.Logging.UIConstants.System, $"[ColorDatabaseRuntime] Failed to load addressable '{addressableKey}'");
+                    HelloDev.Loader.Loader.LoadAssetAsync<ColorDatabase_SO>(addressableKey)
+                        .OnComplete(result =>
+                        {
+                            if (result != null)
+                                database = result;
+                            else
+                                Logger.LogError(HelloDev.Logging.UIConstants.System, $"[ColorDatabaseRuntime] Failed to load addressable '{addressableKey}'");
+                            Register();
+                        });
+                    yield break;
                 }
 
 n                Register();

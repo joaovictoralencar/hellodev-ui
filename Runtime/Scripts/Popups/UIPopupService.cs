@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using HelloDev.Logging;
+using HelloDev.Loader;
 using HelloDev.Utils;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -48,7 +49,6 @@ namespace HelloDev.UI.Popups
         private readonly List<UIPopup> _pool = new();
 #if UNITY_ADDRESSABLES
         private GameObject _addressablePrefab;
-        private AsyncOperationHandle<GameObject> _addressableHandle;
 #endif
 
         #endregion
@@ -102,11 +102,10 @@ namespace HelloDev.UI.Popups
             }
 
 #if UNITY_ADDRESSABLES
-            // Release loaded addressable prefab if any
-            if (_addressableHandle.IsValid())
+            // Release loaded addressable prefab if any (via Loader)
+            if (popupAddressable != null && _addressablePrefab != null)
             {
-                Addressables.Release(_addressableHandle);
-                _addressableHandle = default;
+                HelloDev.Loader.Loader.Release(popupAddressable);
                 _addressablePrefab = null;
             }
 #endif
@@ -381,16 +380,18 @@ namespace HelloDev.UI.Popups
         {
             if (popupAddressable == null) return;
 
-            // Use loader utility from HelloDev.Utils (hard dependency).
+            // Use Loader facade from HelloDev.Loader (hard dependency).
             try
-            {n                _addressableHandle = AddressableLoader.LoadAssetAsync(popupAddressable);
-                _addressableHandle.Completed += handle =>
-                {
-                    if (handle.Status == AsyncOperationStatus.Succeeded)
-                        _addressablePrefab = handle.Result;
-                    else
-                        Logger.LogWarning(HelloDev.Logging.UIConstants.System, "[UIPopupService] Loader failed to load addressable popup prefab");
-                };
+            {
+                HelloDev.Loader.Loader.LoadAssetAsync<GameObject>(popupAddressable)
+                    .OnComplete(prefab =>
+                    {
+                        if (prefab != null)
+                            _addressablePrefab = prefab;
+                        else
+                            Logger.LogWarning(HelloDev.Logging.UIConstants.System, "[UIPopupService] Loader failed to load addressable popup prefab");
+                    });
+
                 return;
             }
             catch (Exception ex)
@@ -400,8 +401,8 @@ namespace HelloDev.UI.Popups
             }
 
             // Fallback to direct Addressables API
-            _addressableHandle = popupAddressable.LoadAssetAsync<GameObject>();
-            _addressableHandle.Completed += handle =>
+            var _fallbackHandle = popupAddressable.LoadAssetAsync<GameObject>();
+            _fallbackHandle.Completed += handle =>
             {
                 if (handle.Status == AsyncOperationStatus.Succeeded)
                     _addressablePrefab = handle.Result;
@@ -473,3 +474,4 @@ namespace HelloDev.UI.Popups
         #endregion
     }
 }
+

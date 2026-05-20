@@ -7,6 +7,7 @@ using UnityEngine;
 using UnityEngine.AddressableAssets;
 using UnityEngine.ResourceManagement.AsyncOperations;
 #endif
+using HelloDev.Loader;
 using Logger = HelloDev.Logging.Logger;
 
 namespace HelloDev.UI.Default
@@ -50,12 +51,16 @@ namespace HelloDev.UI.Default
                 }
                 else
                 {
-                    var handle = addressableReference.LoadAssetAsync();
-                    yield return handle;
-                    if (handle.Status == AsyncOperationStatus.Succeeded)
-                        database = handle.Result;
-                    else
-                        Logger.LogError(HelloDev.Logging.UIConstants.System, $"[UIThemeRuntime] Failed to load addressable on '{name}'");
+                    HelloDev.Loader.Loader.LoadAssetAsync<UIDatabase_SO>(addressableReference)
+                        .OnComplete(result =>
+                        {
+                            if (result != null)
+                                database = result;
+                            else
+                                Logger.LogError(HelloDev.Logging.UIConstants.System, $"[UIThemeRuntime] Failed to load addressable on '{name}'");
+                            Register();
+                        });
+                    yield break;
                 }
 #else
                 Logger.LogWarning(HelloDev.Logging.UIConstants.System, $"[UIThemeRuntime] Addressables mode selected on '{name}', but com.unity.addressables is not available.");
