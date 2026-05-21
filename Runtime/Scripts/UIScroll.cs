@@ -102,6 +102,13 @@ namespace HelloDev.UI.Default
         }
 #endif
 
+        protected virtual void OnDestroy()
+        {
+            #if UNITY_EDITOR
+            UnityEditor.EditorApplication.delayCall -= ApplyFixedHandleSize;
+            #endif
+        }
+
         #region Unity Lifecycle
 
         private void Awake()
