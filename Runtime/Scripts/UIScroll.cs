@@ -90,6 +90,8 @@ namespace HelloDev.UI.Default
 
         private void ApplyFixedHandleSize()
         {
+            if (this == null) return;
+
             UnityEditor.EditorApplication.delayCall -= ApplyFixedHandleSize;
             if (_scrollRect == null)
                 _scrollRect = GetComponent<ScrollRect>();
