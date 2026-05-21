@@ -84,6 +84,13 @@ namespace HelloDev.UI.Default
         {
             if (!fixedScrollbarSize || !overrideHandleSize) return;
 
+            UnityEditor.EditorApplication.delayCall -= ApplyFixedHandleSize;
+            UnityEditor.EditorApplication.delayCall += ApplyFixedHandleSize;
+        }
+
+        private void ApplyFixedHandleSize()
+        {
+            UnityEditor.EditorApplication.delayCall -= ApplyFixedHandleSize;
             if (_scrollRect == null)
                 _scrollRect = GetComponent<ScrollRect>();
 

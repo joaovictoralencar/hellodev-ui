@@ -310,10 +310,8 @@ namespace HelloDev.UI.Default
             pendingShowCallback = null;
         }
 
-        private void OnEnable()
+        protected virtual void OnEnable()
         {
-            //if (debug) Debug.Log($"<color=cyan>UIContainer {gameObject.name} enabled</color>", gameObject);
-
             // Check if we have a pending show.
             // Guard: if already visible (e.g. GO was re-enabled externally while settled),
             // skip to avoid re-triggering show callbacks unnecessarily.
@@ -325,16 +323,15 @@ namespace HelloDev.UI.Default
             }
         }
 
-        private void OnDisable()
+        protected virtual void OnDisable()
         {
-            //if (debug) Debug.Log($"<color=orange>UIContainer {gameObject.name} DISABLED</color>", gameObject);
-
             // If we have an animation in progress, kill it
             KillAnimation();
 
             // Handle external deactivation (e.g. parent GO disabled, scene unload).
             // InstaHide sets this before calling SetActive(false), so this is a no-op
             // in the normal flow but catches any external disable.
+            if (_isVisible) hasPendingShow = true;
             _isVisible = false;
         }
 
