@@ -79,6 +79,22 @@ namespace HelloDev.UI.Default
 
         #endregion
 
+#if UNITY_EDITOR
+        private void OnValidate()
+        {
+            if (!fixedScrollbarSize || !overrideHandleSize) return;
+
+            if (_scrollRect == null)
+                _scrollRect = GetComponent<ScrollRect>();
+
+            if (_scrollRect.verticalScrollbar != null)
+                _scrollRect.verticalScrollbar.size = fixedHandleSize;
+
+            if (_scrollRect.horizontalScrollbar != null)
+                _scrollRect.horizontalScrollbar.size = fixedHandleSize;
+        }
+#endif
+
         #region Unity Lifecycle
 
         private void Awake()
