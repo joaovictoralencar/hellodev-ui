@@ -1,37 +1,37 @@
-using System;
+using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
-using PrimeTween;
 
 namespace HelloDev.UI.Default
 {
     /// <summary>
     /// Enhanced scroll view that automatically scrolls to bring selected items into view.
     /// Works seamlessly with keyboard/controller navigation.
-    /// Uses event-driven architecture - no Update loop.
+    /// Uses event-driven architecture — no Update loop.
     /// </summary>
     [RequireComponent(typeof(ScrollRect))]
     public class UIScroll : MonoBehaviour
     {
         #region Static Events
 
-        /// <summary>
-        /// Global event fired when any selectable is selected.
-        /// UIScroll instances subscribe to this to handle auto-scrolling.
-        /// </summary>
-        public static event Action<GameObject> OnSelectableSelected;
+        public static event System.Action<GameObject> OnSelectableSelected;
 
-        /// <summary>
-        /// Call this from selectables when they receive selection.
-        /// </summary>
-        public static void NotifySelected(GameObject selected)
-        {
+        public static void NotifySelected(GameObject selected) =>
             OnSelectableSelected?.Invoke(selected);
-        }
 
         #endregion
 
         #region Serialized Fields
+        
+        [Header("Scrollbar Handle Size")]
+        [Tooltip("When enabled, prevents Unity from auto-resizing the scrollbar handle based on content ratio.")]
+        [SerializeField] private bool fixedScrollbarSize = false;
+
+        [Tooltip("When enabled, uses the explicit size below instead of capturing the value set on the Scrollbar component at startup.")]
+        [SerializeField] private bool overrideHandleSize = false;
+
+        [Tooltip("The fixed handle size to enforce when Override is enabled. Normalized 0–1.")]
+        [SerializeField, Range(0f, 1f)] private float fixedHandleSize = 0.2f;
 
         [Header("Auto-Scroll to Selection")]
         [Tooltip("When enabled, the scroll view will automatically scroll to show selected items.")]
@@ -41,14 +41,14 @@ namespace HelloDev.UI.Default
         [Tooltip("Duration of the scroll animation in seconds.")]
         [SerializeField] private float scrollDuration = 0.15f;
 
-        [Tooltip("Easing function for the scroll animation.")]
-        [SerializeField] private Ease scrollEase = Ease.OutCubic;
+        [Tooltip("Animation curve for the scroll. Leave default for smooth ease.")]
+        [SerializeField] private AnimationCurve scrollCurve = AnimationCurve.EaseInOut(0, 0, 1, 1);
 
         [Header("Positioning")]
-        [Tooltip("Extra padding around the selected item to ensure it's comfortably visible.")]
+        [Tooltip("Extra padding around the selected item to ensure it is comfortably visible.")]
         [SerializeField] private float viewPadding = 10f;
 
-        [Tooltip("When enabled, centers the selected item in the viewport. When disabled, scrolls minimum distance to make item visible.")]
+        [Tooltip("When enabled, centers the selected item in the viewport.")]
         [SerializeField] private bool centerOnSelection = false;
 
         #endregion
@@ -58,24 +58,23 @@ namespace HelloDev.UI.Default
         private ScrollRect _scrollRect;
         private RectTransform _viewport;
         private RectTransform _content;
-        private Tween _currentTween;
+        private Coroutine _currentTween;
+        
+        private Scrollbar _verticalScrollbar;
+        private Scrollbar _horizontalScrollbar;
+        private float _capturedVerticalSize;
+        private float _capturedHorizontalSize;
 
         #endregion
 
-        #region Public Properties
+        #region Properties
 
-        /// <summary>
-        /// Gets or sets whether auto-scroll to selection is enabled.
-        /// </summary>
         public bool AutoScrollToSelection
         {
             get => autoScrollToSelection;
             set => autoScrollToSelection = value;
         }
 
-        /// <summary>
-        /// The underlying ScrollRect component.
-        /// </summary>
         public ScrollRect ScrollRect => _scrollRect;
 
         #endregion
@@ -85,19 +84,40 @@ namespace HelloDev.UI.Default
         private void Awake()
         {
             _scrollRect = GetComponent<ScrollRect>();
-            _viewport = _scrollRect.viewport ?? GetComponent<RectTransform>();
-            _content = _scrollRect.content;
+            _viewport   = _scrollRect.viewport ?? GetComponent<RectTransform>();
+            _content    = _scrollRect.content;
+            
+            if (fixedScrollbarSize)
+            {
+                _verticalScrollbar   = _scrollRect.verticalScrollbar;
+                _horizontalScrollbar = _scrollRect.horizontalScrollbar;
+
+                // Auto-capture mode: read and lock whatever the designer set in the editor.
+                // Override mode: the explicit fixedHandleSize field is used at enforce time instead.
+                if (!overrideHandleSize)
+                {
+                    if (_verticalScrollbar != null)
+                        _capturedVerticalSize = _verticalScrollbar.size;
+
+                    if (_horizontalScrollbar != null)
+                        _capturedHorizontalSize = _horizontalScrollbar.size;
+                }
+            }
         }
 
         private void OnEnable()
         {
             OnSelectableSelected += HandleSelectionChanged;
+            if (fixedScrollbarSize)
+                Canvas.willRenderCanvases += EnforceScrollbarSize;
         }
 
         private void OnDisable()
         {
             OnSelectableSelected -= HandleSelectionChanged;
-            _currentTween.Stop();
+            StopCurrentTween();
+            if (fixedScrollbarSize)
+                Canvas.willRenderCanvases -= EnforceScrollbarSize;
         }
 
         #endregion
@@ -106,266 +126,175 @@ namespace HelloDev.UI.Default
 
         private void HandleSelectionChanged(GameObject selected)
         {
-            if (!autoScrollToSelection) return;
-            if (selected == null || _content == null) return;
-
-            // Only scroll if the selected object is within our content
-            if (!selected.transform.IsChildOf(_content))
-                return;
+            if (!autoScrollToSelection || selected == null || _content == null) return;
+            if (!selected.transform.IsChildOf(_content)) return;
 
             var itemRect = selected.GetComponent<RectTransform>();
-            if (itemRect != null)
-                ScrollToItem(itemRect);
+            if (itemRect != null) ScrollToItem(itemRect);
         }
 
         #endregion
 
         #region Public Methods
 
-        /// <summary>
-        /// Scrolls to bring the specified item into view.
-        /// </summary>
-        /// <param name="item">The RectTransform of the item to scroll to.</param>
         public void ScrollToItem(RectTransform item)
         {
             if (item == null || _content == null || _viewport == null) return;
 
-            if (_scrollRect.vertical)
-                ScrollToItemVertical(item);
-            else if (_scrollRect.horizontal)
-                ScrollToItemHorizontal(item);
+            if (_scrollRect.vertical)       ScrollToItemVertical(item);
+            else if (_scrollRect.horizontal) ScrollToItemHorizontal(item);
         }
 
-        /// <summary>
-        /// Scrolls to bring the specified item into view immediately without animation.
-        /// </summary>
-        /// <param name="item">The RectTransform of the item to scroll to.</param>
         public void ScrollToItemImmediate(RectTransform item)
         {
             if (item == null || _content == null || _viewport == null) return;
-
-            _currentTween.Stop();
+            StopCurrentTween();
 
             if (_scrollRect.vertical)
-            {
-                float targetPosition = CalculateVerticalScrollPosition(item);
-                _scrollRect.verticalNormalizedPosition = targetPosition;
-            }
+                _scrollRect.verticalNormalizedPosition = CalculateVerticalScrollPosition(item);
             else if (_scrollRect.horizontal)
-            {
-                float targetPosition = CalculateHorizontalScrollPosition(item);
-                _scrollRect.horizontalNormalizedPosition = targetPosition;
-            }
+                _scrollRect.horizontalNormalizedPosition = CalculateHorizontalScrollPosition(item);
         }
 
-        /// <summary>
-        /// Scrolls to the top of the content.
-        /// </summary>
-        public void ScrollToTop()
-        {
-            _currentTween.Stop();
-            _currentTween = Tween.Custom(_scrollRect.verticalNormalizedPosition, 1f, scrollDuration,
-                value => _scrollRect.verticalNormalizedPosition = value, scrollEase);
-        }
-
-        /// <summary>
-        /// Scrolls to the bottom of the content.
-        /// </summary>
-        public void ScrollToBottom()
-        {
-            _currentTween.Stop();
-            _currentTween = Tween.Custom(_scrollRect.verticalNormalizedPosition, 0f, scrollDuration,
-                value => _scrollRect.verticalNormalizedPosition = value, scrollEase);
-        }
-
-        /// <summary>
-        /// Scrolls to the left of the content.
-        /// </summary>
-        public void ScrollToLeft()
-        {
-            _currentTween.Stop();
-            _currentTween = Tween.Custom(_scrollRect.horizontalNormalizedPosition, 0f, scrollDuration,
-                value => _scrollRect.horizontalNormalizedPosition = value, scrollEase);
-        }
-
-        /// <summary>
-        /// Scrolls to the right of the content.
-        /// </summary>
-        public void ScrollToRight()
-        {
-            _currentTween.Stop();
-            _currentTween = Tween.Custom(_scrollRect.horizontalNormalizedPosition, 1f, scrollDuration,
-                value => _scrollRect.horizontalNormalizedPosition = value, scrollEase);
-        }
+        public void ScrollToTop()    => AnimateTo(v => _scrollRect.verticalNormalizedPosition   = v, _scrollRect.verticalNormalizedPosition,   1f);
+        public void ScrollToBottom() => AnimateTo(v => _scrollRect.verticalNormalizedPosition   = v, _scrollRect.verticalNormalizedPosition,   0f);
+        public void ScrollToLeft()   => AnimateTo(v => _scrollRect.horizontalNormalizedPosition = v, _scrollRect.horizontalNormalizedPosition, 0f);
+        public void ScrollToRight()  => AnimateTo(v => _scrollRect.horizontalNormalizedPosition = v, _scrollRect.horizontalNormalizedPosition, 1f);
 
         #endregion
 
         #region Private Methods
+        
+        /// <summary>
+        /// Called by Unity's canvas pipeline before each render.
+        /// Restores the handle size that Unity overwrites during its layout pass.
+        /// </summary>
+        private void EnforceScrollbarSize()
+        {
+            if (_verticalScrollbar != null)
+            {
+                _verticalScrollbar.size = overrideHandleSize
+                    ? fixedHandleSize
+                    : _capturedVerticalSize;
+            }
+
+            if (_horizontalScrollbar != null)
+            {
+                _horizontalScrollbar.size = overrideHandleSize
+                    ? fixedHandleSize
+                    : _capturedHorizontalSize;
+            }
+        }
 
         private void ScrollToItemVertical(RectTransform item)
         {
-            float targetPosition = CalculateVerticalScrollPosition(item);
-
-            // Check if we actually need to scroll
-            if (Mathf.Approximately(targetPosition, _scrollRect.verticalNormalizedPosition))
-                return;
-
-            _currentTween.Stop();
-            _currentTween = Tween.Custom(_scrollRect.verticalNormalizedPosition, targetPosition, scrollDuration,
-                value => _scrollRect.verticalNormalizedPosition = value, scrollEase);
+            float target = CalculateVerticalScrollPosition(item);
+            if (!Mathf.Approximately(target, _scrollRect.verticalNormalizedPosition))
+                AnimateTo(v => _scrollRect.verticalNormalizedPosition = v, _scrollRect.verticalNormalizedPosition, target);
         }
 
         private void ScrollToItemHorizontal(RectTransform item)
         {
-            float targetPosition = CalculateHorizontalScrollPosition(item);
+            float target = CalculateHorizontalScrollPosition(item);
+            if (!Mathf.Approximately(target, _scrollRect.horizontalNormalizedPosition))
+                AnimateTo(v => _scrollRect.horizontalNormalizedPosition = v, _scrollRect.horizontalNormalizedPosition, target);
+        }
 
-            // Check if we actually need to scroll
-            if (Mathf.Approximately(targetPosition, _scrollRect.horizontalNormalizedPosition))
-                return;
+        private void AnimateTo(System.Action<float> setter, float from, float to)
+        {
+            StopCurrentTween();
+            _currentTween = StartCoroutine(LerpRoutine(setter, from, to));
+        }
 
-            _currentTween.Stop();
-            _currentTween = Tween.Custom(_scrollRect.horizontalNormalizedPosition, targetPosition, scrollDuration,
-                value => _scrollRect.horizontalNormalizedPosition = value, scrollEase);
+        private IEnumerator LerpRoutine(System.Action<float> setter, float from, float to)
+        {
+            float elapsed = 0f;
+            while (elapsed < scrollDuration)
+            {
+                elapsed += Time.unscaledDeltaTime;
+                float t = Mathf.Clamp01(elapsed / scrollDuration);
+                setter(Mathf.LerpUnclamped(from, to, scrollCurve.Evaluate(t)));
+                yield return null;
+            }
+            setter(to);
+            _currentTween = null;
+        }
+
+        private void StopCurrentTween()
+        {
+            if (_currentTween != null) { StopCoroutine(_currentTween); _currentTween = null; }
         }
 
         private float CalculateVerticalScrollPosition(RectTransform item)
         {
-            // Force layout rebuild to ensure accurate positions
             Canvas.ForceUpdateCanvases();
 
-            float contentHeight = _content.rect.height;
+            float contentHeight  = _content.rect.height;
             float viewportHeight = _viewport.rect.height;
 
-            // If content fits in viewport, no scrolling needed
             if (contentHeight <= viewportHeight)
                 return _scrollRect.verticalNormalizedPosition;
 
-            // Get item's position relative to content
-            Vector3[] itemCorners = new Vector3[4];
-            item.GetWorldCorners(itemCorners);
-
+            Vector3[] itemCorners     = new Vector3[4];
             Vector3[] viewportCorners = new Vector3[4];
+            item.GetWorldCorners(itemCorners);
             _viewport.GetWorldCorners(viewportCorners);
 
-            // Calculate item bounds in world space
-            float itemTop = itemCorners[1].y; // Top-left corner Y
-            float itemBottom = itemCorners[0].y; // Bottom-left corner Y
-
-            float viewportTop = viewportCorners[1].y;
-            float viewportBottom = viewportCorners[0].y;
-
-            // Scrollable range
-            float scrollableHeight = contentHeight - viewportHeight;
+            float itemTop      = itemCorners[1].y;
+            float itemBottom   = itemCorners[0].y;
+            float viewportTop  = viewportCorners[1].y;
+            float viewportBot  = viewportCorners[0].y;
+            float scrollable   = contentHeight - viewportHeight;
 
             if (centerOnSelection)
             {
-                // Center the item in the viewport
-                float itemCenter = (itemTop + itemBottom) / 2f;
-                float viewportCenter = (viewportTop + viewportBottom) / 2f;
-                float offset = itemCenter - viewportCenter;
-
-                // Convert offset to normalized position change
-                // Positive offset (item above center) means we need to scroll UP (increase normalizedPosition)
-                float normalizedOffset = offset / scrollableHeight;
-                return Mathf.Clamp01(_scrollRect.verticalNormalizedPosition + normalizedOffset);
+                float offset = (itemTop + itemBottom) / 2f - (viewportTop + viewportBot) / 2f;
+                return Mathf.Clamp01(_scrollRect.verticalNormalizedPosition + offset / scrollable);
             }
-            else
-            {
-                // Scroll minimum distance to make item visible
-                float paddedViewportTop = viewportTop - viewPadding;
-                float paddedViewportBottom = viewportBottom + viewPadding;
 
-                // Check if item is already fully visible
-                if (itemTop <= paddedViewportTop && itemBottom >= paddedViewportBottom)
-                    return _scrollRect.verticalNormalizedPosition;
+            float paddedTop = viewportTop - viewPadding;
+            float paddedBot = viewportBot + viewPadding;
+            if (itemTop <= paddedTop && itemBottom >= paddedBot)
+                return _scrollRect.verticalNormalizedPosition;
 
-                float offset = 0f;
-
-                if (itemTop > paddedViewportTop)
-                {
-                    // Item is above viewport - need to scroll UP (increase normalizedPosition)
-                    offset = itemTop - paddedViewportTop;
-                }
-                else if (itemBottom < paddedViewportBottom)
-                {
-                    // Item is below viewport - need to scroll DOWN (decrease normalizedPosition)
-                    offset = itemBottom - paddedViewportBottom;
-                }
-
-                // Convert offset to normalized position change
-                float normalizedOffset = offset / scrollableHeight;
-                return Mathf.Clamp01(_scrollRect.verticalNormalizedPosition + normalizedOffset);
-            }
+            float delta = itemTop > paddedTop ? itemTop - paddedTop : itemBottom - paddedBot;
+            return Mathf.Clamp01(_scrollRect.verticalNormalizedPosition + delta / scrollable);
         }
 
         private float CalculateHorizontalScrollPosition(RectTransform item)
         {
-            // Force layout rebuild to ensure accurate positions
             Canvas.ForceUpdateCanvases();
 
-            float contentWidth = _content.rect.width;
+            float contentWidth  = _content.rect.width;
             float viewportWidth = _viewport.rect.width;
 
-            // If content fits in viewport, no scrolling needed
             if (contentWidth <= viewportWidth)
                 return _scrollRect.horizontalNormalizedPosition;
 
-            // Get item's position relative to content
-            Vector3[] itemCorners = new Vector3[4];
-            item.GetWorldCorners(itemCorners);
-
+            Vector3[] itemCorners     = new Vector3[4];
             Vector3[] viewportCorners = new Vector3[4];
+            item.GetWorldCorners(itemCorners);
             _viewport.GetWorldCorners(viewportCorners);
 
-            // Calculate item bounds in world space
-            float itemLeft = itemCorners[0].x; // Bottom-left corner X
-            float itemRight = itemCorners[2].x; // Top-right corner X
-
-            float viewportLeft = viewportCorners[0].x;
+            float itemLeft    = itemCorners[0].x;
+            float itemRight   = itemCorners[2].x;
+            float viewportLeft  = viewportCorners[0].x;
             float viewportRight = viewportCorners[2].x;
-
-            // Scrollable range
-            float scrollableWidth = contentWidth - viewportWidth;
+            float scrollable  = contentWidth - viewportWidth;
 
             if (centerOnSelection)
             {
-                // Center the item in the viewport
-                float itemCenter = (itemLeft + itemRight) / 2f;
-                float viewportCenter = (viewportLeft + viewportRight) / 2f;
-                float offset = itemCenter - viewportCenter;
-
-                // Convert offset to normalized position change
-                // Positive offset (item to the right) means we need to scroll RIGHT (increase normalizedPosition)
-                float normalizedOffset = offset / scrollableWidth;
-                return Mathf.Clamp01(_scrollRect.horizontalNormalizedPosition + normalizedOffset);
+                float offset = (itemLeft + itemRight) / 2f - (viewportLeft + viewportRight) / 2f;
+                return Mathf.Clamp01(_scrollRect.horizontalNormalizedPosition + offset / scrollable);
             }
-            else
-            {
-                // Scroll minimum distance to make item visible
-                float paddedViewportLeft = viewportLeft + viewPadding;
-                float paddedViewportRight = viewportRight - viewPadding;
 
-                // Check if item is already fully visible
-                if (itemLeft >= paddedViewportLeft && itemRight <= paddedViewportRight)
-                    return _scrollRect.horizontalNormalizedPosition;
+            float paddedLeft  = viewportLeft  + viewPadding;
+            float paddedRight = viewportRight - viewPadding;
+            if (itemLeft >= paddedLeft && itemRight <= paddedRight)
+                return _scrollRect.horizontalNormalizedPosition;
 
-                float offset = 0f;
-
-                if (itemLeft < paddedViewportLeft)
-                {
-                    // Item is to the left of viewport - need to scroll LEFT (decrease normalizedPosition)
-                    offset = itemLeft - paddedViewportLeft;
-                }
-                else if (itemRight > paddedViewportRight)
-                {
-                    // Item is to the right of viewport - need to scroll RIGHT (increase normalizedPosition)
-                    offset = itemRight - paddedViewportRight;
-                }
-
-                // Convert offset to normalized position change
-                float normalizedOffset = offset / scrollableWidth;
-                return Mathf.Clamp01(_scrollRect.horizontalNormalizedPosition + normalizedOffset);
-            }
+            float delta = itemLeft < paddedLeft ? itemLeft - paddedLeft : itemRight - paddedRight;
+            return Mathf.Clamp01(_scrollRect.horizontalNormalizedPosition + delta / scrollable);
         }
 
         #endregion
