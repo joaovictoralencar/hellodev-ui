@@ -198,10 +198,28 @@ namespace HelloDev.UI.Default
         {
             switch (onStartAction)
             {
-                case StartAction.InstaHide: InstaHide(); break;
-                case StartAction.InstaShow: InstaShow(); break;
-                case StartAction.Hide: Hide(); break;
-                case StartAction.Show: Show(); break;
+                case StartAction.InstaHide:
+                {
+                    InstaHide();
+                    break;
+                }
+                case StartAction.InstaShow:
+                {
+                    if (Group) Group.ShowContainer(this, true);
+                    else InstaShow();
+                    break;
+                }
+                case StartAction.Hide:
+                {
+                    Hide();
+                    break;
+                }
+                case StartAction.Show:
+                {
+                    if (Group) Group.ShowContainer(this);
+                    else Show();
+                    break;
+                }
             }
         }
 
@@ -272,7 +290,7 @@ namespace HelloDev.UI.Default
 
             if (Group && !fromGroup)
             {
-                Logger.LogWarning("UI", "This container has a group. Use group methods to show it instead.");
+                Logger.LogWarning("UI", $"This container [{ID}] has a group {Group.GroupID}. Use group methods to show it instead.");
                 return;
             }
 

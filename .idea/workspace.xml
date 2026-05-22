@@ -12,6 +12,8 @@
   <component name="ChangeListManager">
     <list default="true" id="3ef8d65b-03d1-4c31-82b2-431448cc45a4" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Runtime/Scripts/UIContainer.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Runtime/Scripts/UIContainer.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Runtime/Scripts/UIContainerGroup.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Runtime/Scripts/UIContainerGroup.cs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -89,10 +91,11 @@
   <component name="HighlightingSettingsPerFile">
     <setting file="file://$PROJECT_DIR$/Runtime/Scripts/Popups/UIPopup.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/Runtime/Scripts/Popups/UIPopupService.cs" root0="FORCE_HIGHLIGHTING" />
-    <setting file="file://$PROJECT_DIR$/Runtime/Scripts/UIContainer.cs" root0="SKIP_HIGHLIGHTING" />
-    <setting file="file://$PROJECT_DIR$/Runtime/Scripts/UIContainerGroup.cs" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/Runtime/Scripts/UIContainer.cs" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/Runtime/Scripts/UIContainerGroup.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/Runtime/Scripts/UIContainerGroupManager.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/Runtime/Scripts/UIInputField.cs" root0="SKIP_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/Runtime/Scripts/UIScroll.cs" root0="SKIP_HIGHLIGHTING" />
   </component>
   <component name="MetaFilesCheckinStateConfiguration" checkMetaFiles="true" />
   <component name="ProjectColorInfo">{
@@ -137,7 +140,10 @@
       <workItem from="1779119211257" duration="12371000" />
       <workItem from="1779283855741" duration="721000" />
       <workItem from="1779284592552" duration="161000" />
-      <workItem from="1779284910149" duration="619000" />
+      <workItem from="1779284910149" duration="3418000" />
+      <workItem from="1779368149656" duration="3127000" />
+      <workItem from="1779384069361" duration="3555000" />
+      <workItem from="1779461360623" duration="1511000" />
     </task>
     <task id="LOCAL-00001" summary="Added smart check for groups when showing containers">
       <option name="closed" value="true" />
@@ -171,7 +177,71 @@
       <option name="project" value="LOCAL" />
       <updated>1779284669914</updated>
     </task>
-    <option name="localTasksCounter" value="5" />
+    <task id="LOCAL-00005" summary="Updated UIContainer">
+      <option name="closed" value="true" />
+      <created>1779286601064</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1779286601064</updated>
+    </task>
+    <task id="LOCAL-00006" summary="Updated UIContainer">
+      <option name="closed" value="true" />
+      <created>1779287475475</created>
+      <option name="number" value="00006" />
+      <option name="presentableId" value="LOCAL-00006" />
+      <option name="project" value="LOCAL" />
+      <updated>1779287475475</updated>
+    </task>
+    <task id="LOCAL-00007" summary="Fixed IsVisible in UIContainer">
+      <option name="closed" value="true" />
+      <created>1779290170224</created>
+      <option name="number" value="00007" />
+      <option name="presentableId" value="LOCAL-00007" />
+      <option name="project" value="LOCAL" />
+      <updated>1779290170224</updated>
+    </task>
+    <task id="LOCAL-00008" summary="Updated UIScroll">
+      <option name="closed" value="true" />
+      <created>1779368396624</created>
+      <option name="number" value="00008" />
+      <option name="presentableId" value="LOCAL-00008" />
+      <option name="project" value="LOCAL" />
+      <updated>1779368396624</updated>
+    </task>
+    <task id="LOCAL-00009" summary="Added OnValidate logic to UIScroll">
+      <option name="closed" value="true" />
+      <created>1779369222332</created>
+      <option name="number" value="00009" />
+      <option name="presentableId" value="LOCAL-00009" />
+      <option name="project" value="LOCAL" />
+      <updated>1779369222332</updated>
+    </task>
+    <task id="LOCAL-00010" summary="Updated UIContainer and UIScroll">
+      <option name="closed" value="true" />
+      <created>1779384141110</created>
+      <option name="number" value="00010" />
+      <option name="presentableId" value="LOCAL-00010" />
+      <option name="project" value="LOCAL" />
+      <updated>1779384141110</updated>
+    </task>
+    <task id="LOCAL-00011" summary="Updated UIScroll">
+      <option name="closed" value="true" />
+      <created>1779386568886</created>
+      <option name="number" value="00011" />
+      <option name="presentableId" value="LOCAL-00011" />
+      <option name="project" value="LOCAL" />
+      <updated>1779386568886</updated>
+    </task>
+    <task id="LOCAL-00012" summary="Updated UIScroll.cs">
+      <option name="closed" value="true" />
+      <created>1779386841832</created>
+      <option name="number" value="00012" />
+      <option name="presentableId" value="LOCAL-00012" />
+      <option name="project" value="LOCAL" />
+      <updated>1779386841832</updated>
+    </task>
+    <option name="localTasksCounter" value="13" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -184,7 +254,13 @@
       <map>
         <entry key="MAIN">
           <value>
-            <State />
+            <State>
+              <option name="CUSTOM_BOOLEAN_PROPERTIES">
+                <map>
+                  <entry key="Show.Git.Branches" value="true" />
+                </map>
+              </option>
+            </State>
           </value>
         </entry>
       </map>
@@ -196,7 +272,13 @@
     <MESSAGE value="Enhance UIPopup and UIColourStyle: add fallback color support, improve logging, and implement pooling reset" />
     <MESSAGE value="updated to use loader from ui utils" />
     <MESSAGE value="Updated UIContainer.cs" />
-    <option name="LAST_COMMIT_MESSAGE" value="Updated UIContainer.cs" />
+    <MESSAGE value="Updated UIContainer" />
+    <MESSAGE value="Fixed IsVisible in UIContainer" />
+    <MESSAGE value="Added OnValidate logic to UIScroll" />
+    <MESSAGE value="Updated UIContainer and UIScroll" />
+    <MESSAGE value="Updated UIScroll" />
+    <MESSAGE value="Updated UIScroll.cs" />
+    <option name="LAST_COMMIT_MESSAGE" value="Updated UIScroll.cs" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>

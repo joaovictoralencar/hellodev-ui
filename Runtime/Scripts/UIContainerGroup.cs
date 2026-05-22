@@ -176,7 +176,7 @@ namespace HelloDev.UI.Default
             }
 
             // Make sure the group container is shown
-            if (!Container.IsVisible()) Container.InstaShow(false, false);
+            if (!Container.IsVisible()) Container.InstaShow(Container.Group != null, false);
 
             if (keepOneOpen)
             {
@@ -213,7 +213,7 @@ namespace HelloDev.UI.Default
         private void ShowContainerInternal(UIContainer containerToShow, bool instant, Action onShow)
         {
             // Ensure group container is visible
-            if (!Container.IsVisible()) Container.InstaShow();
+            if (!Container.IsVisible()) Container.InstaShow(Container.Group != null);
 
             // Show the requested container
             if (instant)

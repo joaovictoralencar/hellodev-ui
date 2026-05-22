@@ -9,7 +9,7 @@
     "toggles"
   ],
   "dependencies": {
-    "com.hellodev.utils": "1.0.0",
+    "com.hellodev.utils": "1.0.3",
     "com.unity.textmeshpro": "3.0.0",
     "com.unity.localization": "1.5.11"
   },
@@ -27,7 +27,7 @@
   ],
   "unity": "6000.0",
   "name": "com.hellodev.ui",
-  "version": "1.0.5",
+  "version": "1.0.8",
   "license": "MIT",
   "author": {
     "name": "Hello Dev",

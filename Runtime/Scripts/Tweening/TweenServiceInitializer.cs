@@ -32,7 +32,7 @@ namespace HelloDev.UI.Tweening
         private void OnDestroy()
         {
             // Only clear if we're the active initializer
-            if (TweenService.Provider is PrimeTweenProvider)
+            if (TweenService.Provider is PrimeTweenProvider && TweenService.Provider == this)
             {
                 TweenService.ClearProvider();
             }
