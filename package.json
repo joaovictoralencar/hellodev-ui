@@ -9,7 +9,7 @@
     "toggles"
   ],
   "dependencies": {
-    "com.hellodev.utils": "1.0.3",
+    "com.hellodev.utils": "1.0.4",
     "com.unity.textmeshpro": "3.0.0",
     "com.unity.localization": "1.5.11"
   },
