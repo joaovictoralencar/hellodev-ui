@@ -43,8 +43,18 @@ namespace HelloDev.UI.Default
         private bool firstShowHandled = false;
         private Canvas canvas;
         private CanvasGroup canvasGroup;
+        public UIContainer container;
 
-        public UIContainer Container { get; private set; }
+        public UIContainer Container
+        {
+            get
+            {
+                if (container == null) TryGetComponent(out container);
+                return container;
+            }
+            private set => container = value;
+        }
+
         public List<UIContainer> Containers => containers;
         public UIContainer CurrentContainer => currentContainer;
         public Canvas Canvas => canvas;
@@ -295,7 +305,7 @@ namespace HelloDev.UI.Default
             // For instant hide, just hide them all immediately
             if (instant)
             {
-                foreach (var container in containers.Where(container => container.IsVisible() && container != containerToShow))
+                foreach (var container in containers.Where(container => container != containerToShow))
                 {
                     container.InstaHide(true);
                     if (!alsoHideChildren) continue;
