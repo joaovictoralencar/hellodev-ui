@@ -376,6 +376,7 @@ namespace HelloDev.UI.Default
             // In that case we want to fall through and animate directly, not re-queue.
             if (!gameObject.activeSelf || !Canvas.enabled)
             {
+				gameObject.SetActive(false);
                 hasPendingShow = true;
                 pendingInstant = false;
                 Canvas.enabled = true;
