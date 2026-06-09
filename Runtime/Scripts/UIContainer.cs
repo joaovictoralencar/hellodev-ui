@@ -417,8 +417,8 @@ namespace HelloDev.UI.Default
             }
 
             if (invokeCallbacks) onStartShow?.Invoke();
-            // Start fade in animation
-            fadeTween = TweenService.Provider.Fade(CanvasGroup, 1f, openDuration)
+            ITweenProvider provider = TweenService.Provider;
+            fadeTween = provider.Fade(CanvasGroup, 1f, openDuration)
                 .SetEase(openEase)
                 .SetUpdate(unscaledTime)
                 .OnComplete(() =>
@@ -497,8 +497,8 @@ namespace HelloDev.UI.Default
             }
 
             if (invokeCallbacks) onStartHide?.Invoke();
-            // Start fade out animation
-            fadeTween = TweenService.Provider.Fade(CanvasGroup, 0f, hideDuration)
+            ITweenProvider provider = TweenService.Provider;
+            fadeTween = provider.Fade(CanvasGroup, 0f, hideDuration)
                 .SetEase(hideEase)
                 .SetUpdate(unscaledTime)
                 .OnComplete(() =>
