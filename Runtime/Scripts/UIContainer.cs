@@ -7,6 +7,7 @@ using UnityEngine.Events;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
 using Logger = HelloDev.Logging.Logger;
+using HelloDev.UI.Tweening;
 
 namespace HelloDev.UI.Default
 {
@@ -147,7 +148,19 @@ namespace HelloDev.UI.Default
         public UnityEvent onStartShow;
 
         #region Properties
-
+        
+        ITweenProvider Provider
+        {
+            get { 
+                if (TweenService.Provider.GetType() == NullTweenProvider.Instance.GetType())
+                {
+                    var provider = new PrimeTweenProvider();
+                    TweenService.SetProvider(provider);
+                    return provider;
+                }
+            }
+        }
+        
         public float OpenDuration => openDuration;
         public float HideDuration => hideDuration;
         public UIContainerGroup Group { get; private set; }
@@ -417,8 +430,8 @@ namespace HelloDev.UI.Default
             }
 
             if (invokeCallbacks) onStartShow?.Invoke();
-            ITweenProvider provider = TweenService.Provider;
-            fadeTween = provider.Fade(CanvasGroup, 1f, openDuration)
+            // Start fade in animation
+            fadeTween = Provider.Fade(CanvasGroup, 1f, openDuration)
                 .SetEase(openEase)
                 .SetUpdate(unscaledTime)
                 .OnComplete(() =>
@@ -497,8 +510,8 @@ namespace HelloDev.UI.Default
             }
 
             if (invokeCallbacks) onStartHide?.Invoke();
-            ITweenProvider provider = TweenService.Provider;
-            fadeTween = provider.Fade(CanvasGroup, 0f, hideDuration)
+            // Start fade out animation
+            fadeTween = Provider.Fade(CanvasGroup, 0f, hideDuration)
                 .SetEase(hideEase)
                 .SetUpdate(unscaledTime)
                 .OnComplete(() =>
