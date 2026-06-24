@@ -158,6 +158,8 @@ namespace HelloDev.UI.Default
                     TweenService.SetProvider(provider);
                     return provider;
                 }
+
+                return TweenService.Provider;
             }
         }
         
