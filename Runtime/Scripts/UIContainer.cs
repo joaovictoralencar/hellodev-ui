@@ -121,6 +121,8 @@ namespace HelloDev.UI.Default
         [Header("Animation Settings")]
         [SerializeField] private float openDuration = 0.3f;
         [SerializeField] private float hideDuration = 0.3f;
+        [SerializeField] private float hideDelay = 0;
+        [SerializeField] private float showDelay = 0;
         public EaseType openEase = EaseType.OutQuad;
         public EaseType hideEase = EaseType.InQuad;
         [SerializeField] private bool unscaledTime = false;
@@ -433,7 +435,7 @@ namespace HelloDev.UI.Default
 
             if (invokeCallbacks) onStartShow?.Invoke();
             // Start fade in animation
-            fadeTween = Provider.Fade(CanvasGroup, 1f, openDuration)
+            fadeTween = Provider.Fade(CanvasGroup, 1f, openDuration, showDelay)
                 .SetEase(openEase)
                 .SetUpdate(unscaledTime)
                 .OnComplete(() =>
@@ -513,7 +515,7 @@ namespace HelloDev.UI.Default
 
             if (invokeCallbacks) onStartHide?.Invoke();
             // Start fade out animation
-            fadeTween = Provider.Fade(CanvasGroup, 0f, hideDuration)
+            fadeTween = Provider.Fade(CanvasGroup, 0f, hideDuration, hideDelay)
                 .SetEase(hideEase)
                 .SetUpdate(unscaledTime)
                 .OnComplete(() =>
