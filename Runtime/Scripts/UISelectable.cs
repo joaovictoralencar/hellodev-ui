@@ -29,7 +29,8 @@ namespace HelloDev.UI.Default
         [SerializeField] protected SelectableState currentState;
         [SerializeField] protected bool debugMode = false;
 
-        protected Vector3 originalScale;
+        [Tooltip("For scale on hover animation, don't touch if not used"), SerializeField] 
+        protected Vector3 originalScale = Vector3.one;
         protected bool selected;
         protected bool mouseOver;
         protected bool pointerDown;
@@ -60,7 +61,6 @@ namespace HelloDev.UI.Default
 
         protected virtual void Awake()
         {
-            originalScale = transform.localScale;
             InitializeState();
         }
 

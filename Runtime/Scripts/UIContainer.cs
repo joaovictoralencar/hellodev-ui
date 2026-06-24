@@ -1,709 +1,407 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using HelloDev.Logging;
-using HelloDev.Tweening;
+using HelloDev.Utils;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.UI;
-using UnityEngine.EventSystems;
 using Logger = HelloDev.Logging.Logger;
-using HelloDev.UI.Tweening;
+#if ODIN_INSPECTOR
+using Sirenix.OdinInspector;
+#endif
 
 namespace HelloDev.UI.Default
 {
-    /// <summary>
-    /// Base container for UI panels with show/hide animations and navigation support.
-    ///
-    /// Navigation:
-    /// - Unity's built-in navigation handles Up/Down/Left/Right between selectables
-    /// - This class handles panel-level navigation (Cancel/Back to parent panel)
-    /// - Set up Navigation mode on selectables (Automatic or Explicit) for within-panel nav
-    /// </summary>
     [RequireComponent(typeof(Canvas))]
     [RequireComponent(typeof(CanvasGroup))]
     [RequireComponent(typeof(GraphicRaycaster))]
-    public class UIContainer : MonoBehaviour
+    [RequireComponent(typeof(UIContainer))]
+    public class UIContainerGroup : MonoBehaviour
     {
-        #region Static Panel Registry
+        [Header("Navigation")] [SerializeField]
+        UIButton backButton;
 
-        private static readonly List<UIContainer> _activeContainers = new();
-        private static readonly Dictionary<Transform, int> _depthCache = new();
+        [Header("Settings")] public string GroupID; // Unique identifier for this group
+        public ContainerFetchMode fetchMode = ContainerFetchMode.Manual;
+        public bool keepOneOpen = false;
+        [SerializeField] bool ShowFirstEnabledContainer = true;
+        [SerializeField] private UIContainer FirstActiveContainer;
 
-        /// <summary>
-        /// All currently active (visible) containers.
-        /// </summary>
-        public static IReadOnlyList<UIContainer> ActiveContainers => _activeContainers;
+        [Header("Debug")] public bool debug = false;
 
-        /// <summary>
-        /// Finds the most specific (innermost) container that owns the currently selected GameObject.
-        /// When containers are nested, returns the deepest one containing the selection.
-        /// </summary>
-        public static UIContainer GetContainerForSelection()
+        [Header("Read Only")]
+#if ODIN_INSPECTOR
+        [ReadOnly]
+#endif
+        [SerializeField]
+        private Stack<UIContainer> backStack = new Stack<UIContainer>();
+
+        [SerializeField] private List<UIContainer> containers = new List<UIContainer>();
+
+        private UIContainer currentContainer;
+        private Canvas canvas;
+        private CanvasGroup canvasGroup;
+        public UIContainer container;
+
+        public UIContainer Container
         {
-            if (EventSystem.current == null) return null;
-            var selected = EventSystem.current.currentSelectedGameObject;
-            if (selected == null) return null;
-
-            UIContainer bestMatch = null;
-            int bestDepth = -1;
-
-            foreach (var container in _activeContainers)
+            get
             {
-                if (selected.transform.IsChildOf(container.transform))
+                if (container == null) TryGetComponent(out container);
+                return container;
+            }
+            private set => container = value;
+        }
+
+        public List<UIContainer> Containers => containers;
+        public UIContainer CurrentContainer => currentContainer;
+        public Canvas Canvas => canvas;
+        public CanvasGroup CanvasGroup
+        {
+            get
+            {
+                if (canvasGroup == null) TryGetComponent(out canvasGroup);
+                return canvasGroup;
+            }
+        }
+
+        public UIContainerGroupManager Manager { get; set; }
+
+        public UIButton BackButton => backButton;
+
+        private void Awake()
+        {
+            Container = GetComponent<UIContainer>();
+            FetchEssentialComponents();
+            if (fetchMode == ContainerFetchMode.FindOnAwake)
+            {
+                FetchContainers();
+            }
+
+            foreach (var uiContainer in containers)
+            {
+                uiContainer.SetGroup(this);
+                uiContainer.debug = debug;
+            }
+        }
+
+        private void OnEnable()
+        {
+            Container.onShow.SafeSubscribe(OnShow);
+            //if (debug) Debug.Log($"<color=cyan>UIContainerGroup {gameObject.name} enabled</color>", gameObject);
+        }
+
+        private void OnDisable()
+        {
+            Container.onShow.SafeUnsubscribe(OnShow);
+            //if (debug) Debug.Log($"<color=orange>UIContainerGroup {gameObject.name} DISABLED</color>", gameObject);
+        }
+
+        private void Start()
+        {
+            if (ShowFirstEnabledContainer && gameObject.activeSelf)
+            {
+                ShowFirstEnabledContainerHandler(true, null);
+            }
+        }
+
+        private void OnShow()
+        {
+            if (ShowFirstEnabledContainer && gameObject.activeSelf)
+            {
+                ShowFirstEnabledContainerHandler(true, null);
+            }
+        }
+
+        private void FetchContainers()
+        {
+            containers.Clear();
+            containers.AddRange(GetComponentsInChildren<UIContainer>(true));
+
+            // Remove self from containers list if it's there
+            containers.RemoveAll(c => c == Container);
+        }
+
+        public void ShowFirstEnabledContainerHandler(bool instant, Action onShow)
+        {
+            if (currentContainer != null && currentContainer.IsVisible())
+            {
+                onShow?.Invoke();
+                return;
+            }
+
+            if (containers.Count == 0)
+            {
+                Logger.LogWarning("UI", $"No UIContainers found in group {GroupID}.");
+                onShow?.Invoke();
+                return;
+            }
+
+            UIContainer tempFirstActiveContainer;
+
+            if (FirstActiveContainer == null)
+            {
+                tempFirstActiveContainer = containers.Find(c => c.gameObject.activeSelf);
+                if (tempFirstActiveContainer == null)
                 {
-                    // Count depth - deeper containers have more parents (cached)
-                    int depth = GetTransformDepthCached(container.transform);
-                    if (depth > bestDepth)
+                    // No active container found, use the first one in the list
+                    if (containers.Count > 0)
                     {
-                        bestDepth = depth;
-                        bestMatch = container;
+                        tempFirstActiveContainer = containers[0];
+                    }
+                    else
+                    {
+                        Logger.LogWarning("UI", $"No enabled UIContainer found in group {GroupID}.");
+                        onShow?.Invoke();
+                        return;
                     }
                 }
             }
-            return bestMatch;
-        }
-
-        private static int GetTransformDepthCached(Transform t)
-        {
-            if (_depthCache.TryGetValue(t, out int cachedDepth))
-                return cachedDepth;
-
-            int depth = 0;
-            Transform current = t;
-            while (current.parent != null)
+            else
             {
-                depth++;
-                current = current.parent;
+                tempFirstActiveContainer = FirstActiveContainer;
             }
 
-            _depthCache[t] = depth;
-            return depth;
+            ShowContainer(tempFirstActiveContainer.ID, instant, onShow);
         }
 
-        /// <summary>
-        /// Clears the transform depth cache. Called when hierarchy might have changed.
-        /// </summary>
-        public static void ClearDepthCache()
+        public void ShowContainer(string id, bool instant = false, Action onShow = null, bool alsoHideChildren = false)
         {
-            _depthCache.Clear();
+            UIContainer containerToShow = containers.Find(c => c.ID == id);
+
+            if (containerToShow == null)
+            {
+                Logger.LogError("UI", $"UIContainer with ID {id} not found in group {GroupID}");
+                onShow?.Invoke();
+                return;
+            }
+
+            // Make sure the group container is shown
+            if (!Container.IsVisible()) Container.InstaShow(Container.Group != null, false);
+
+            if (keepOneOpen)
+            {
+                //If there is a container opened, hide it first
+                if (currentContainer != null && currentContainer != containerToShow)
+                {
+                    // Add current to back stack before hiding
+                    if (currentContainer.IsVisible() && !backStack.Contains(currentContainer))
+                    {
+                        backStack.Push(currentContainer);
+                    }
+                }
+
+                // Hide all containers
+                HideAll(true, containerToShow, () =>
+                {
+                    // After all are hidden, show the requested container
+                    ShowContainerInternal(containerToShow, instant, onShow);
+                }, alsoHideChildren);
+
+                // HideAll(instant, containerToShow, () =>
+                // {
+                //     // After all are hidden, show the requested container
+                //     ShowContainerInternal(containerToShow, instant, onShow);
+                // }, alsoHideChildren);
+                return;
+            }
+
+            // If we don't need to keep one open or current container is null,
+            // directly show the requested container
+            ShowContainerInternal(containerToShow, instant, onShow);
         }
 
-        #endregion
+        private void ShowContainerInternal(UIContainer containerToShow, bool instant, Action onShow)
+        {
+            // Ensure group container is visible
+            if (!Container.IsVisible()) Container.InstaShow(Container.Group != null);
 
-        public string ID;
+            // Show the requested container
+            if (instant)
+            {
+                containerToShow.InstaShow(true, true, onShow);
+            }
+            else
+            {
+                containerToShow.Show(true, true, onShow);
+            }
+
+            // Update current container
+            currentContainer = containerToShow;
+
+            if (debug)
+            {
+                //Debug.Log($"<color=cyan>[UIContainerGroup] ({gameObject.name}) current container {containerToShow.ID}</color>", gameObject);
+            }
+        }
+
+        public void ShowContainer(UIContainer container, bool instant = false, Action onShow = null)
+        {
+            if (container == null)
+            {
+                Logger.LogError("UI", "Cannot show null container");
+                onShow?.Invoke();
+                return;
+            }
+
+            if (!containers.Contains(container))
+            {
+                Logger.LogError("UI", $"Container {container.ID} is not part of group {GroupID}");
+                onShow?.Invoke();
+                return;
+            }
+
+            ShowContainer(container.ID, instant, onShow);
+        }
+
+        public void Back(bool instant = false)
+        {
+            if (backStack.Count > 0)
+            {
+                UIContainer previousContainer = backStack.Pop();
+                if (currentContainer != null)
+                {
+                    if (instant)
+                    {
+                        currentContainer.InstaHide(true);
+                    }
+                    else
+                    {
+                        currentContainer.Hide(true);
+                    }
+                }
+
+                if (instant)
+                {
+                    previousContainer.InstaShow(true);
+                }
+                else
+                {
+                    previousContainer.Show(true);
+                }
+
+                currentContainer = previousContainer;
+            }
+        }
+
+        public void HideAll(bool instant = true, UIContainer containerToShow = null, Action onComplete = null, bool alsoHideChildren = false)
+        {
+            // If there are no containers or none are active, just call the completion callback
+            if (containers.Count == 0)
+            {
+                onComplete?.Invoke();
+                return;
+            }
+
+            // For instant hide, just hide them all immediately
+            if (instant)
+            {
+                foreach (var container in containers.Where(container => container != containerToShow))
+                {
+                    container.InstaHide(true);
+                    if (!alsoHideChildren) continue;
+                    if (container.gameObject.TryGetComponent(out UIContainerGroup group))
+                    {
+                        group.HideAll(true, null, null, true);
+                    }
+                }
+
+                currentContainer = null;
+                onComplete?.Invoke();
+                return;
+            }
+
+            // For animated hide, we need to track completion of all animations
+            List<UIContainer> visibleContainers = new List<UIContainer>();
+
+            // Find all visible containers
+            foreach (var container in containers)
+            {
+                if (container.IsVisible() && container != containerToShow)
+                {
+                    visibleContainers.Add(container);
+                    if (!alsoHideChildren) continue;
+                    if (container.gameObject.TryGetComponent(out UIContainerGroup group))
+                    {
+                        group.HideAll(true, null, null, true);
+                    }
+                }
+            }
+
+            // If no visible containers, just call the completion callback
+            if (visibleContainers.Count == 0)
+            {
+                onComplete?.Invoke();
+                return;
+            }
+
+            // Track how many containers we're waiting on
+            int remainingContainers = visibleContainers.Count;
+
+            // Create a callback that will be invoked after each container is hidden
+            void onContainerHidden()
+            {
+                remainingContainers--;
+
+                // When all containers are hidden, invoke the completion callback
+                if (remainingContainers <= 0)
+                {
+                    currentContainer = null;
+                    onComplete?.Invoke();
+                }
+            }
+
+            // Hide each container and attach our callback
+            foreach (var container in visibleContainers)
+            {
+                // Create a one-time event listener for this specific hide operation
+                UnityAction hideListener = null;
+                hideListener = () =>
+                {
+                    // Remove this listener to prevent memory leaks
+                    container.onHide.SafeUnsubscribe(hideListener);
+                    onContainerHidden();
+                };
+
+                // Add the listener
+                container.onHide.AddListener(hideListener);
+
+                // Hide the container
+                container.Hide(true);
+            }
+        }
+
+        public void HideAllChildrenAndShow(string id, bool instant, Action onComplete = null, bool alsoHideChildren = false)
+        {
+            ShowContainer(id, instant, onComplete, alsoHideChildren);
+        }
+
+        private void FetchEssentialComponents()
+        {
+            if (canvas == null) TryGetComponent(out canvas);
+            if (canvasGroup == null) TryGetComponent(out canvasGroup);
+        }
 
 #if UNITY_EDITOR
         private void OnValidate()
         {
-            if (string.IsNullOrEmpty(ID)) ID = gameObject.name;
+            if (string.IsNullOrEmpty(GroupID)) GroupID = gameObject.name;
+
+            if (fetchMode == ContainerFetchMode.FindOnValidate)
+            {
+                FetchContainers();
+            }
+
+            FetchEssentialComponents();
         }
 #endif
-
-        public enum StartAction
-        {
-            DoNothing,
-            Show,
-            Hide,
-            InstaShow,
-            InstaHide
-        }
-
-        [Header("Navigation")]
-        [Tooltip("Button that triggers Cancel/Back behavior")]
-        [SerializeField] private UIButton backButton;
-
-        [Tooltip("Container to focus when Cancel/Back is pressed (null = hide this container)")]
-        [SerializeField] private UIContainer parentContainer;
-
-        [Header("Start Action")]
-        public StartAction onStartAction = StartAction.DoNothing;
-
-        [Header("Animation Settings")]
-        [SerializeField] private float openDuration = 0.3f;
-        [SerializeField] private float hideDuration = 0.3f;
-        public EaseType openEase = EaseType.OutQuad;
-        public EaseType hideEase = EaseType.InQuad;
-        [SerializeField] private bool unscaledTime = false;
-
-        [Header("Interaction Settings")]
-        public bool disableInteractionsWhenHidden = true;
-
-        [Header("Auto-Select Settings")]
-        [Tooltip("Selectable to focus when this container is shown")]
-        public Selectable autoSelectable;
-
-        [Tooltip("Remember last selected element and restore on re-show")]
-        [SerializeField] private bool rememberSelection = true;
-
-        [Header("Close")]
-        [SerializeField] private UIButton[] closeButtons;
-
-        [Header("Debug")]
-        [SerializeField] internal bool debug = false;
-
-        [Header("Callbacks")]
-        public UnityEvent onShow;
-        public UnityEvent onHide;
-        public UnityEvent onStartHide;
-        public UnityEvent onStartShow;
-
-        #region Properties
-        
-        ITweenProvider Provider
-        {
-            get { 
-                if (TweenService.Provider.GetType() == NullTweenProvider.Instance.GetType())
-                {
-                    var provider = new PrimeTweenProvider();
-                    TweenService.SetProvider(provider);
-                    return provider;
-                }
-            }
-        }
-        
-        public float OpenDuration => openDuration;
-        public float HideDuration => hideDuration;
-        public UIContainerGroup Group { get; private set; }
-        public UIContainer ParentContainer => parentContainer;
-
-        public Canvas Canvas => canvas ??= GetComponent<Canvas>();
-        private Canvas canvas;
-
-        public CanvasGroup CanvasGroup => canvasGroup ??= GetComponent<CanvasGroup>();
-        private CanvasGroup canvasGroup;
-
-        #endregion
-
-        #region Private Fields
-
-        private ITweenHandle fadeTween;
-        private bool animationInProgress = false;
-        private bool hasPendingShow = false;
-        private bool hasPendingHide = false;
-        private bool pendingInstant = false;
-        private Action pendingShowCallback = null;
-        private GameObject _lastSelectedObject;
-
-        // Tracks settled visibility state manually.
-        // True only after a show animation completes or InstaShow runs.
-        // False after hide completes, InstaHide, or external deactivation via OnDisable.
-        // NOT true during animations — use IsAnimating() for that.
-        private bool _isVisible = false;
-
-        #endregion
-
-        protected virtual void Awake()
-        {
-            canvas = GetComponent<Canvas>();
-            canvasGroup = GetComponent<CanvasGroup>();
-
-            foreach (var btn in closeButtons)
-            {
-                if (btn != null)
-                    btn.OnClick.AddListener(() => Hide());
-            }
-
-            if (backButton != null)
-                backButton.OnClick.AddListener(HandleBack);
-        }
-
-        protected virtual void Start()
-        {
-            switch (onStartAction)
-            {
-                case StartAction.InstaHide:
-                {
-                    InstaHide();
-                    break;
-                }
-                case StartAction.InstaShow:
-                {
-                    if (Group) Group.ShowContainer(this, true);
-                    else InstaShow();
-                    break;
-                }
-                case StartAction.Hide:
-                {
-                    Hide();
-                    break;
-                }
-                case StartAction.Show:
-                {
-                    if (Group) Group.ShowContainer(this);
-                    else Show();
-                    break;
-                }
-            }
-        }
-
-        protected virtual void OnDestroy()
-        {
-            _activeContainers.Remove(this);
-            _depthCache.Remove(transform);
-            KillAnimation();
-        }
-
-        public void InstaHide(bool fromGroup = false, bool invokeCallbacks = true)
-        {
-            KillAnimation();
-
-            if (Group && !fromGroup)
-            {
-                Logger.LogWarning("UI", "This container has a group. Use group methods to hide it instead.");
-                return;
-            }
-
-            // Remember selection before hiding
-            RememberCurrentSelection();
-
-            // Remove from active containers
-            _activeContainers.Remove(this);
-
-            // Mark as hidden before SetActive(false) so OnDisable doesn't race
-            _isVisible = false;
-
-            // Apply hidden state
-            CanvasGroup.alpha = 0f;
-            if (disableInteractionsWhenHidden)
-            {
-                CanvasGroup.interactable = false;
-                CanvasGroup.blocksRaycasts = false;
-            }
-
-            Canvas.enabled = false;
-            gameObject.SetActive(false);
-
-            if (debug)
-            {
-                if (Group != null)
-                    Debug.Log($"<color=orange>[UIContainer] Group [{Group.gameObject.name}] started INSTA hiding {gameObject.name}</color>", gameObject);
-                else
-                    Debug.Log($"<color=orange>[UIContainer] ({gameObject.name}) started INSTA hiding</color>", gameObject);
-            }
-
-            if (invokeCallbacks)
-            {
-                onStartHide?.Invoke();
-                onHide?.Invoke();
-            }
-
-            hasPendingShow = false;
-            hasPendingHide = false;
-            pendingShowCallback = null;
-        }
-
-        public void InstaShow(bool fromGroup = false, bool invokeCallbacks = true, Action onShowCallback = null)
-        {
-            // Cancel any pending animations
-            KillAnimation();
-
-            // If we're already settled-visible and callbacks aren't needed, skip
-            if (_isVisible && !invokeCallbacks && onShowCallback == null)
-                return;
-
-            if (Group && !fromGroup)
-            {
-                Logger.LogWarning("UI", $"This container [{ID}] has a group {Group.GroupID}. Use group methods to show it instead.");
-                return;
-            }
-
-            // Apply visible state
-            gameObject.SetActive(true);
-            Canvas.enabled = true;
-            CanvasGroup.alpha = 1f;
-            CanvasGroup.interactable = true;
-            CanvasGroup.blocksRaycasts = true;
-
-            // Settled: fully visible, no animation
-            _isVisible = true;
-
-            // Add to active containers
-            if (!_activeContainers.Contains(this))
-                _activeContainers.Add(this);
-
-            AutoSelect();
-            if (debug && Group != null)
-            {
-                Debug.Log($"<color=cyan>[UIContainer] Group [{Group.gameObject.name}] started INSTA SHOW {gameObject.name}</color>", gameObject);
-            }
-
-            if (invokeCallbacks)
-            {
-                onStartShow?.Invoke();
-                onShow?.Invoke();
-            }
-
-            onShowCallback?.Invoke();
-
-            // Clear pending actions
-            hasPendingShow = false;
-            hasPendingHide = false;
-            pendingShowCallback = null;
-        }
-
-        protected virtual void OnEnable()
-        {
-            // Check if we have a pending show.
-            // Guard: if already visible (e.g. GO was re-enabled externally while settled),
-            // skip to avoid re-triggering show callbacks unnecessarily.
-            if (hasPendingShow && !_isVisible)
-            {
-                Show(Group != null, true, pendingShowCallback);
-                hasPendingShow = false;
-                pendingShowCallback = null;
-            }
-        }
-
-        protected virtual void OnDisable()
-        {
-            // If we have an animation in progress, kill it
-            KillAnimation();
-
-            // Handle external deactivation (e.g. parent GO disabled, scene unload).
-            // InstaHide sets this before calling SetActive(false), so this is a no-op
-            // in the normal flow but catches any external disable.
-            if (_isVisible) hasPendingShow = true;
-            _isVisible = false;
-        }
-
-        public void ShowContainer(bool invokeCallbacks = true)
-        {
-            if (Group != null) Group.ShowContainer(this);
-            else Show(Group != null, invokeCallbacks, null);
-        }
-
-        public void HideContainer(bool invokeCallbacks = true)
-        {
-            Hide(Group != null, invokeCallbacks);
-        }
-
-        public void Show(bool fromGroup = false, bool invokeCallbacks = true, Action onShowCallback = null)
-        {   
-            // Kill any existing animation
-            KillAnimation();
-            
-            // GO is inactive or canvas disabled — can't tween yet.
-            // Queue as pending: OnEnable will resume once the GO is active.
-            // Note: this is intentionally NOT checking _isVisible, because a hide animation
-            // interrupted by KillAnimation() leaves the GO active but _isVisible = false.
-            // In that case we want to fall through and animate directly, not re-queue.
-            if (!gameObject.activeSelf || !Canvas.enabled)
-            {
-				gameObject.SetActive(false);
-                hasPendingShow = true;
-                pendingInstant = false;
-                Canvas.enabled = true;
-                pendingShowCallback = onShowCallback;
-                
-                // Enable the gameObject to trigger OnEnable where we'll resume
-                gameObject.SetActive(true);
-                if (invokeCallbacks) onStartShow?.Invoke();
-                return;
-            }
-
-            if (Group && !fromGroup)
-            {
-                Logger.LogWarning("UI", "This container has a group. Use group methods to show it instead.");
-                return;
-            }
-
-            // Set animation in progress flag
-            animationInProgress = true;
-
-            // Make container visible
-            gameObject.SetActive(true);
-            Canvas.enabled = true;
-            CanvasGroup.interactable = true;
-            CanvasGroup.blocksRaycasts = true;
-            CanvasGroup.alpha = 0;
-
-            // Add to active containers immediately (so Cancel works during animation)
-            if (!_activeContainers.Contains(this))
-                _activeContainers.Add(this);
-
-            if (debug)
-            {
-                if (Group != null)
-                    Debug.Log($"<color=cyan>[UIContainer] Group [{Group.gameObject.name}] started opening {gameObject.name}</color>", gameObject);
-                else
-                    Debug.Log($"<color=cyan>[UIContainer] ({gameObject.name}) started opening</color>", gameObject);
-            }
-
-            if (invokeCallbacks) onStartShow?.Invoke();
-            // Start fade in animation
-            fadeTween = Provider.Fade(CanvasGroup, 1f, openDuration)
-                .SetEase(openEase)
-                .SetUpdate(unscaledTime)
-                .OnComplete(() =>
-                {
-                    animationInProgress = false;
-
-                    // Settled: animation done, container is fully visible
-                    _isVisible = true;
-
-                    if (debug && Group != null)
-                    {
-                        Debug.Log($"<color=cyan>UIContainerGroup [{Group.GroupID}] opened {ID}</color>", gameObject);
-                    }
-
-                    if (invokeCallbacks) onShow?.Invoke();
-                    onShowCallback?.Invoke();
-                    AutoSelect();
-
-                    // Check if we received a hide request during animation
-                    if (hasPendingHide)
-                    {
-                        hasPendingHide = false;
-                        Hide(Group != null, invokeCallbacks);
-                    }
-                });
-        }
-
-        public void Hide(bool fromGroup = false, bool invokeCallbacks = true)
-        {
-            // Kill any existing animation
-            KillAnimation();
-            
-            // Not in a settled-visible state — nothing animated to hide.
-            // InstaHide cleans up any partial state (alpha, canvas, GO active).
-            if (!_isVisible)
-            {
-                InstaHide(fromGroup, invokeCallbacks);
-                return;
-            }
-
-            if (Group && !fromGroup)
-            {
-                Logger.LogWarning("UI", "This container has a group. Use group methods to hide it instead.");
-                return;
-            }
-
-            // If animation is in progress, mark as pending and return
-            if (animationInProgress)
-            {
-                hasPendingHide = true;
-                return;
-            }
-
-            // Remember selection before hiding
-            RememberCurrentSelection();
-
-            // Remove from active containers
-            _activeContainers.Remove(this);
-
-            // Set animation in progress
-            animationInProgress = true;
-
-            // Disable interactions if needed
-            if (disableInteractionsWhenHidden)
-            {
-                CanvasGroup.interactable = false;
-                CanvasGroup.blocksRaycasts = false;
-            }
-
-            if (debug)
-            {
-                if (Group != null)
-                    Debug.Log($"<color=orange>[UIContainer] Group [{Group.gameObject.name}] started hiding {gameObject.name}</color>", gameObject);
-                else
-                    Debug.Log($"<color=orange>[UIContainer] ({gameObject.name}) started hiding</color>", gameObject);
-            }
-
-            if (invokeCallbacks) onStartHide?.Invoke();
-            // Start fade out animation
-            fadeTween = Provider.Fade(CanvasGroup, 0f, hideDuration)
-                .SetEase(hideEase)
-                .SetUpdate(unscaledTime)
-                .OnComplete(() =>
-                {
-                    animationInProgress = false;
-
-                    // Settled: animation done, container is fully hidden
-                    _isVisible = false;
-
-                    Canvas.enabled = false;
-                    gameObject.SetActive(false);
-
-                    if (debug && Group != null)
-                    {
-                        Debug.Log($"<color=orange>UIContainerGroup [{Group.GroupID}] hid [{ID}]</color>", gameObject);
-                    }
-
-                    if (invokeCallbacks) onHide?.Invoke();
-
-                    // Check if we received a show request during animation
-                    if (hasPendingShow)
-                    {
-                        bool isFromGroup = Group != null;
-                        if (pendingInstant)
-                        {
-                            InstaShow(isFromGroup, true, pendingShowCallback);
-                        }
-                        else
-                        {
-                            Show(isFromGroup, true, pendingShowCallback);
-                        }
-
-                        hasPendingShow = false;
-                        pendingShowCallback = null;
-                    }
-                });
-        }
-
-        private void KillAnimation()
-        {
-            if (fadeTween != null)
-            {
-                fadeTween.Kill();
-                fadeTween = null;
-            }
-
-            animationInProgress = false;
-        }
-
-        private void AutoSelect()
-        {
-            if (EventSystem.current == null) return;
-
-            // First, try to restore remembered selection
-            if (rememberSelection && _lastSelectedObject != null &&
-                _lastSelectedObject.activeInHierarchy &&
-                _lastSelectedObject.transform.IsChildOf(transform))
-            {
-                var selectable = _lastSelectedObject.GetComponent<Selectable>();
-                if (selectable != null && selectable.interactable)
-                {
-                    if (debug)
-                        Debug.Log($"<color=green>[UIContainer] ({gameObject.name}) AutoSelect → restoring: {_lastSelectedObject.name}</color>", gameObject);
-
-                    EventSystem.current.SetSelectedGameObject(_lastSelectedObject);
-                    return;
-                }
-            }
-
-            // Fall back to autoSelectable
-            if (autoSelectable != null && autoSelectable.gameObject.activeInHierarchy && autoSelectable.interactable)
-            {
-                if (debug)
-                    Debug.Log($"<color=green>[UIContainer] ({gameObject.name}) AutoSelect → default: {autoSelectable.gameObject.name}</color>", gameObject);
-
-                EventSystem.current.SetSelectedGameObject(autoSelectable.gameObject);
-            }
-            else if (debug)
-            {
-                Debug.Log($"<color=red>[UIContainer] ({gameObject.name}) AutoSelect → no valid selectable found</color>", gameObject);
-            }
-        }
-
-        /// <summary>
-        /// Returns true only when the container has fully settled into a visible state
-        /// (show animation completed or InstaShow ran). False during animations, while
-        /// hidden, or while pending activation.
-        /// </summary>
-        public bool IsVisible() => _isVisible;
-
-        public bool IsAnimating()
-        {
-            return animationInProgress;
-        }
-
-        public void SetVisibility(bool visible, bool instant = false, bool invokeCallbacks = true, Action onComplete = null)
-        {
-            if (visible)
-            {
-                if (instant) InstaShow(false, invokeCallbacks, onComplete);
-                else Show(false, invokeCallbacks, onComplete);
-            }
-            else
-            {
-                if (instant) InstaHide(false, invokeCallbacks);
-                else Hide(false, invokeCallbacks);
-            }
-        }
-
-        public void SetGroup(UIContainerGroup uiContainerGroup)
-        {
-            Group = uiContainerGroup;
-            // Note: Don't add Group.Back() listener here - HandleBack() already handles groups
-            // via Group.Back() call if needed. Adding another listener would cause double calls.
-        }
-
-        #region Navigation
-
-        /// <summary>
-        /// Remembers the currently selected object for restoration when re-shown.
-        /// </summary>
-        private void RememberCurrentSelection()
-        {
-            if (!rememberSelection) return;
-            if (EventSystem.current == null) return;
-
-            var selected = EventSystem.current.currentSelectedGameObject;
-            if (selected != null && selected.transform.IsChildOf(transform))
-            {
-                _lastSelectedObject = selected;
-                if (debug)
-                    Debug.Log($"<color=magenta>[UIContainer] ({gameObject.name}) remembered selection: {selected.name}</color>", gameObject);
-            }
-        }
-
-        /// <summary>
-        /// Handles the back/cancel action. Uses Group.Back() if in a group,
-        /// otherwise navigates to parent container or hides.
-        /// </summary>
-        public void HandleBack()
-        {
-            if (debug)
-                Debug.Log($"<color=yellow>[UIContainer] ({gameObject.name}) HandleBack called</color>", gameObject);
-
-            // If in a group, delegate to the group's back handling
-            if (Group != null)
-            {
-                if (debug)
-                    Debug.Log($"<color=yellow>[UIContainer] ({gameObject.name}) → delegating to Group.Back()</color>", gameObject);
-
-                Group.Back();
-                return;
-            }
-
-            // Check for valid parent (not null and not self-reference)
-            if (parentContainer != null && parentContainer != this)
-            {
-                if (debug)
-                    Debug.Log($"<color=yellow>[UIContainer] ({gameObject.name}) → navigating to parent: {parentContainer.gameObject.name}</color>", gameObject);
-
-                // Hide first, then show parent (prevents focus conflicts)
-                Hide();
-                parentContainer.Show();
-            }
-            else
-            {
-                if (debug)
-                    Debug.Log($"<color=yellow>[UIContainer] ({gameObject.name}) → no parent, hiding</color>", gameObject);
-
-                // No parent - just hide
-                Hide();
-            }
-        }
-
-        /// <summary>
-        /// Focuses this container programmatically, selecting the appropriate element.
-        /// </summary>
-        public void Focus()
-        {
-            if (!IsVisible())
-            {
-                if (debug)
-                    Debug.Log($"<color=magenta>[UIContainer] ({gameObject.name}) Focus() called but not visible</color>", gameObject);
-                return;
-            }
-
-            if (debug)
-                Debug.Log($"<color=magenta>[UIContainer] ({gameObject.name}) Focus() called</color>", gameObject);
-
-            AutoSelect();
-        }
-
-        #endregion
+    }
+
+    public enum ContainerFetchMode
+    {
+        Manual,
+        FindOnValidate,
+        FindOnAwake
     }
 }
