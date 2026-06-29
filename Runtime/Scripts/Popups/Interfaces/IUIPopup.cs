@@ -42,8 +42,10 @@ namespace HelloDev.UI.Popups
     /// </summary>
     public class PopupHandle
     {
+        /// <summary>The ID of the popup that owns this handle.</summary>
         public string PopupId;
-        public GameObject PrefabInstance;
+
+        /// <summary>The addressable operation handle for the popup's prefab, if loaded via Addressables.</summary>
         public AsyncOperationHandle<GameObject>? AddressableHandle;
 
         /// <summary>
@@ -53,8 +55,8 @@ namespace HelloDev.UI.Popups
         {
             if (AddressableHandle.HasValue && AddressableHandle.Value.IsValid())
             {
+                Logging.Logger.LogVerbose("UI.PopUp", $"Releasing addressable handle for popup '{PopupId}'");
                 UnityEngine.AddressableAssets.Addressables.Release(AddressableHandle.Value);
-                Logging.Logger.LogVerbose("UI.PopUp", $"Released addressable handle for popup '{PopupId}'");
             }
         }
     }

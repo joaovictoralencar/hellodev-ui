@@ -28,39 +28,47 @@ namespace HelloDev.UI.Popups
         [SerializeField] private AssetReference defaultButtonReference;
 
         private readonly List<UIButton> _buttons = new();
-        private Dictionary<string, AsyncOperationHandle<GameObject>> _buttonHandles = new();
+        private readonly Dictionary<string, AsyncOperationHandle<GameObject>> _buttonHandles = new();
 
         #region Lifecycle
 
+        /// <summary>
+        /// Initialises the popup: builds content and spawns buttons.
+        /// </summary>
         public override async Task Initialize(PopupRequest request)
         {
             Logging.Logger.LogVerbose("UI.PopUp", $"Initialising popup '{request.Title ?? request.LocalizedTitle?.GetLocalizedString()}'", this);
             Container.InstaHide();
             await base.Initialize(request);
 
-            // Build the static content (title/message) and then the dynamic buttons
             BuildContent();
             await BuildButtons();
 
             Logging.Logger.Log("UI.PopUp", $"Popup initialised with {_buttons.Count} button(s)", this);
         }
 
+        /// <summary>
+        /// Shows the popup and sets the default selected button.
+        /// </summary>
         public override void Show()
         {
             base.Show();
             SetDefaultSelection();
-            Logging.Logger.LogVerbose("UI.PopUp", $"Popup '{Id}' shown", this);
+            Logging.Logger.LogVerbose("UI.PopUp", "Popup shown", this);
         }
 
+        /// <summary>
+        /// Releases all addressable button assets when the popup is destroyed.
+        /// </summary>
         private void OnDestroy()
         {
-            // Release any addressable button assets we loaded
             foreach (var kvp in _buttonHandles)
             {
                 kvp.Value.Release();
+                Logging.Logger.LogVerbose("UI.PopUp", "Released button asset handle", this);
             }
             _buttonHandles.Clear();
-            Logging.Logger.LogVerbose("UI.PopUp", $"Popup '{Id}' destroyed, cleaned up button handles", this);
+            Logging.Logger.LogVerbose("UI.PopUp", "Popup destroyed, cleaned up button handles", this);
         }
 
         #endregion
@@ -120,36 +128,27 @@ namespace HelloDev.UI.Popups
                 for (int i = 0; i < Request.Buttons.Count; i++)
                 {
                     int index = i;
-                    UIButton buttonInstance = null;
+                    var buttonData = Request.Buttons[i];
 
-                    // Determine which prefab to use for this button
-                    if (Request.Buttons[i].PrefabReference != null && Request.Buttons[i].PrefabReference.IsValid())
+                    // Get the prefab (either direct or loaded via Addressables)
+                    GameObject prefab = await GetButtonPrefabAsync(buttonData);
+                    if (prefab == null) continue;
+
+                    UIButton buttonInstance = Instantiate(prefab, buttonContainer).GetComponent<UIButton>();
+                    if (buttonInstance == null)
                     {
-                        buttonInstance = await SpawnButtonAsync(Request.Buttons[i].PrefabReference);
-                    }
-                    else if (Request.Buttons[i].Prefab)
-                    {
-                        buttonInstance = Instantiate(Request.Buttons[i].Prefab, buttonContainer);
-                    }
-                    else if (defaultButtonReference != null && defaultButtonReference.IsValid())
-                    {
-                        buttonInstance = await SpawnButtonAsync(defaultButtonReference);
-                    }
-                    else if (defaultButtonPrefab != null)
-                    {
-                        buttonInstance = Instantiate(defaultButtonPrefab, buttonContainer);
+                        Logging.Logger.LogWarning("UI.PopUp", "Instantiated button has no UIButton component", this);
+                        continue;
                     }
 
-                    if (buttonInstance == null) continue;
+                    // Set the label (localized or fallback)
+                    SetButtonLabel(buttonInstance, buttonData);
 
-                    // Set the button's label (localized or fallback)
-                    SetButtonLabel(buttonInstance, Request.Buttons[i]);
-
-                    // Hook up the callback and optional auto-close
+                    // Hook up callback and optional auto-close
                     buttonInstance.OnClick.AddListener(() =>
                     {
-                        Request.Buttons[index].Callback?.Invoke(this);
-                        if (Request.Buttons[index].ClosesPopup) ClosePopUp();
+                        buttonData.Callback?.Invoke(this);
+                        if (buttonData.ClosesPopup) ClosePopUp();
                     });
 
                     _buttons.Add(buttonInstance);
@@ -166,38 +165,68 @@ namespace HelloDev.UI.Popups
 
         #region Button Helpers
 
-        private void SetButtonLabel(UIButton btn, PopupButtonData requestButton)
+        /// <summary>
+        /// Determines which prefab to use for a button and loads it (if addressable).
+        /// Handles fallback to default button prefab/reference.
+        /// </summary>
+        private async Task<GameObject> GetButtonPrefabAsync(PopupButtonData buttonData)
+        {
+            // 1. Try the button's own addressable reference
+            if (buttonData.PrefabReference != null && buttonData.PrefabReference.IsValid())
+                return await LoadButtonAssetAsync(buttonData.PrefabReference);
+
+            // 2. Try the button's own direct prefab
+            if (buttonData.Prefab != null)
+                return buttonData.Prefab.gameObject;
+
+            // 3. Fallback to default addressable reference
+            if (defaultButtonReference != null && defaultButtonReference.IsValid())
+                return await LoadButtonAssetAsync(defaultButtonReference);
+
+            // 4. Final fallback to default direct prefab
+            return defaultButtonPrefab != null ? defaultButtonPrefab.gameObject : null;
+        }
+
+        /// <summary>
+        /// Loads a button asset via Addressables and caches the handle so we can release it later.
+        /// </summary>
+        private async Task<GameObject> LoadButtonAssetAsync(AssetReference reference)
+        {
+            string key = reference.RuntimeKey.ToString();
+
+            Logging.Logger.LogVerbose("UI.PopUp", "Loading button asset from addressables", this);
+
+            if (!_buttonHandles.TryGetValue(key, out var handle))
+            {
+                handle = Addressables.LoadAssetAsync<GameObject>(reference);
+                await handle.Task;
+                _buttonHandles[key] = handle;
+                Logging.Logger.LogVerbose("UI.PopUp", "Button asset loaded and cached", this);
+            }
+
+            return handle.Result;
+        }
+
+        /// <summary>
+        /// Sets the button's text using either the localized string or the fallback label.
+        /// Retrieves both possible components once to avoid repeated GetComponent calls.
+        /// </summary>
+        private void SetButtonLabel(UIButton btn, PopupButtonData buttonData)
         {
             var buttonText = btn.GetComponentInChildren<TextMeshProUGUI>();
-            var localizeScriptEvent = btn.GetComponentInChildren<LocalizeStringEvent>();
+            var localizeScript = btn.GetComponentInChildren<LocalizeStringEvent>();
 
-            if (requestButton.LocalizedLabel != null)
-                localizeScriptEvent.StringReference = requestButton.LocalizedLabel;
+            if (buttonData.LocalizedLabel != null && localizeScript != null)
+                localizeScript.StringReference = buttonData.LocalizedLabel;
+            else if (buttonText != null)
+                buttonText.text = buttonData.Label;
             else
-                buttonText.text = requestButton.Label;
+                Logging.Logger.LogWarning("UI.PopUp", "Button has no TextMeshProUGUI or LocalizeStringEvent to set label", this);
         }
 
-        private async Task<UIButton> SpawnButtonAsync(AssetReference reference)
-        {
-            GameObject buttonInstance;
-
-            // Cache the loaded asset so we can reuse the same handle for duplicates
-            if (!_buttonHandles.ContainsKey(reference.RuntimeKey.ToString()))
-            {
-                var op = Addressables.LoadAssetAsync<GameObject>(reference);
-                await op.Task;
-
-                _buttonHandles.TryAdd(reference.RuntimeKey.ToString(), op);
-                buttonInstance = Instantiate(op.Result, buttonContainer);
-            }
-            else
-            {
-                buttonInstance = Instantiate(_buttonHandles[reference.RuntimeKey.ToString()].Result, buttonContainer);
-            }
-
-            return buttonInstance.GetComponent<UIButton>();
-        }
-
+        /// <summary>
+        /// Sets the first button as the default selectable for gamepad/keyboard navigation.
+        /// </summary>
         private void SetDefaultSelection()
         {
             if (_buttons.Count == 0) return;
@@ -208,9 +237,12 @@ namespace HelloDev.UI.Popups
 
         #region Input Handling
 
+        /// <summary>
+        /// Handles cancellation input – closes the popup.
+        /// </summary>
         public override void HandleCancel()
         {
-            Logging.Logger.LogVerbose("UI.PopUp", $"Popup '{Id}' received cancel, closing", this);
+            Logging.Logger.LogVerbose("UI.PopUp", "Popup received cancel, closing", this);
             ClosePopUp();
         }
 
