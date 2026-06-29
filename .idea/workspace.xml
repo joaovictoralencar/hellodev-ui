@@ -12,8 +12,7 @@
   <component name="ChangeListManager">
     <list default="true" id="3ef8d65b-03d1-4c31-82b2-431448cc45a4" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Runtime/Scripts/UIContainer.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Runtime/Scripts/UIContainer.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Runtime/Scripts/UIContainerGroup.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Runtime/Scripts/UIContainerGroup.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/package.json" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -89,13 +88,18 @@
   }
 }</component>
   <component name="HighlightingSettingsPerFile">
+    <setting file="file://$PROJECT_DIR$/Runtime/Scripts/CustomSelectable.cs" root0="SKIP_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/Runtime/Scripts/Popups/Popup_SO.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/Runtime/Scripts/Popups/UIPopup.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/Runtime/Scripts/Popups/UIPopupService.cs" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/Runtime/Scripts/Tweening/PrimeTweenProvider.cs" root0="SKIP_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/Runtime/Scripts/Tweening/TweenServiceInitializer.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/Runtime/Scripts/UIContainer.cs" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/Runtime/Scripts/UIContainerGroup.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/Runtime/Scripts/UIContainerGroupManager.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/Runtime/Scripts/UIInputField.cs" root0="SKIP_HIGHLIGHTING" />
-    <setting file="file://$PROJECT_DIR$/Runtime/Scripts/UIScroll.cs" root0="SKIP_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/Runtime/Scripts/UIScroll.cs" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/Runtime/Scripts/UISelectable.cs" root0="SKIP_HIGHLIGHTING" />
   </component>
   <component name="MetaFilesCheckinStateConfiguration" checkMetaFiles="true" />
   <component name="ProjectColorInfo">{
@@ -118,6 +122,7 @@
     &quot;RunOnceActivity.typescript.service.memoryLimit.init&quot;: &quot;true&quot;,
     &quot;cidr.known.project.marker&quot;: &quot;true&quot;,
     &quot;codeWithMe.voiceChat.enabledByDefault&quot;: &quot;false&quot;,
+    &quot;copilot.chat.legacySessionMetadata.migrated&quot;: &quot;true&quot;,
     &quot;git-widget-placeholder&quot;: &quot;hotifx/showgroup&quot;,
     &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
     &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
@@ -143,7 +148,18 @@
       <workItem from="1779284910149" duration="3418000" />
       <workItem from="1779368149656" duration="3127000" />
       <workItem from="1779384069361" duration="3555000" />
-      <workItem from="1779461360623" duration="1511000" />
+      <workItem from="1779461360623" duration="1614000" />
+      <workItem from="1779468774894" duration="1226000" />
+      <workItem from="1779480603444" duration="1872000" />
+      <workItem from="1779671568381" duration="73000" />
+      <workItem from="1780692441045" duration="213000" />
+      <workItem from="1781038405754" duration="221000" />
+      <workItem from="1781038785949" duration="1205000" />
+      <workItem from="1782302732485" duration="717000" />
+      <workItem from="1782303616880" duration="630000" />
+      <workItem from="1782307180718" duration="2274000" />
+      <workItem from="1782405132555" duration="1468000" />
+      <workItem from="1782409348118" duration="2401000" />
     </task>
     <task id="LOCAL-00001" summary="Added smart check for groups when showing containers">
       <option name="closed" value="true" />
@@ -241,7 +257,111 @@
       <option name="project" value="LOCAL" />
       <updated>1779386841832</updated>
     </task>
-    <option name="localTasksCounter" value="13" />
+    <task id="LOCAL-00013" summary="Updated to v1.0.8">
+      <option name="closed" value="true" />
+      <created>1779468548687</created>
+      <option name="number" value="00013" />
+      <option name="presentableId" value="LOCAL-00013" />
+      <option name="project" value="LOCAL" />
+      <updated>1779468548687</updated>
+    </task>
+    <task id="LOCAL-00014" summary="Updated dependencies">
+      <option name="closed" value="true" />
+      <created>1779469179640</created>
+      <option name="number" value="00014" />
+      <option name="presentableId" value="LOCAL-00014" />
+      <option name="project" value="LOCAL" />
+      <updated>1779469179640</updated>
+    </task>
+    <task id="LOCAL-00015" summary="Updated UIContainerGroup">
+      <option name="closed" value="true" />
+      <created>1779671589789</created>
+      <option name="number" value="00015" />
+      <option name="presentableId" value="LOCAL-00015" />
+      <option name="project" value="LOCAL" />
+      <updated>1779671589789</updated>
+    </task>
+    <task id="LOCAL-00016" summary="Updated UIContainer">
+      <option name="closed" value="true" />
+      <created>1780692538859</created>
+      <option name="number" value="00016" />
+      <option name="presentableId" value="LOCAL-00016" />
+      <option name="project" value="LOCAL" />
+      <updated>1780692538859</updated>
+    </task>
+    <task id="LOCAL-00017" summary="Updated UIContainer.cs">
+      <option name="closed" value="true" />
+      <created>1781038579238</created>
+      <option name="number" value="00017" />
+      <option name="presentableId" value="LOCAL-00017" />
+      <option name="project" value="LOCAL" />
+      <updated>1781038579238</updated>
+    </task>
+    <task id="LOCAL-00018" summary="Updated UIContainer.cs">
+      <option name="closed" value="true" />
+      <created>1781039193598</created>
+      <option name="number" value="00018" />
+      <option name="presentableId" value="LOCAL-00018" />
+      <option name="project" value="LOCAL" />
+      <updated>1781039193598</updated>
+    </task>
+    <task id="LOCAL-00019" summary="v1.0.8.5">
+      <option name="closed" value="true" />
+      <created>1782303433167</created>
+      <option name="number" value="00019" />
+      <option name="presentableId" value="LOCAL-00019" />
+      <option name="project" value="LOCAL" />
+      <updated>1782303433167</updated>
+    </task>
+    <task id="LOCAL-00020" summary="Fixed error">
+      <option name="closed" value="true" />
+      <created>1782303670990</created>
+      <option name="number" value="00020" />
+      <option name="presentableId" value="LOCAL-00020" />
+      <option name="project" value="LOCAL" />
+      <updated>1782303670990</updated>
+    </task>
+    <task id="LOCAL-00021" summary="Updated UIContainer">
+      <option name="closed" value="true" />
+      <created>1782304048853</created>
+      <option name="number" value="00021" />
+      <option name="presentableId" value="LOCAL-00021" />
+      <option name="project" value="LOCAL" />
+      <updated>1782304048853</updated>
+    </task>
+    <task id="LOCAL-00022" summary="added delay to uicontainer">
+      <option name="closed" value="true" />
+      <created>1782308798946</created>
+      <option name="number" value="00022" />
+      <option name="presentableId" value="LOCAL-00022" />
+      <option name="project" value="LOCAL" />
+      <updated>1782308798946</updated>
+    </task>
+    <task id="LOCAL-00023" summary="Updated package.json">
+      <option name="closed" value="true" />
+      <created>1782308859194</created>
+      <option name="number" value="00023" />
+      <option name="presentableId" value="LOCAL-00023" />
+      <option name="project" value="LOCAL" />
+      <updated>1782308859194</updated>
+    </task>
+    <task id="LOCAL-00024" summary="Updated version">
+      <option name="closed" value="true" />
+      <created>1782309112152</created>
+      <option name="number" value="00024" />
+      <option name="presentableId" value="LOCAL-00024" />
+      <option name="project" value="LOCAL" />
+      <updated>1782309112152</updated>
+    </task>
+    <task id="LOCAL-00025" summary="Updated version again">
+      <option name="closed" value="true" />
+      <created>1782309289526</created>
+      <option name="number" value="00025" />
+      <option name="presentableId" value="LOCAL-00025" />
+      <option name="project" value="LOCAL" />
+      <updated>1782309289526</updated>
+    </task>
+    <option name="localTasksCounter" value="26" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -271,14 +391,23 @@
     <MESSAGE value="Added smart check for groups when showing containers" />
     <MESSAGE value="Enhance UIPopup and UIColourStyle: add fallback color support, improve logging, and implement pooling reset" />
     <MESSAGE value="updated to use loader from ui utils" />
-    <MESSAGE value="Updated UIContainer.cs" />
-    <MESSAGE value="Updated UIContainer" />
     <MESSAGE value="Fixed IsVisible in UIContainer" />
     <MESSAGE value="Added OnValidate logic to UIScroll" />
     <MESSAGE value="Updated UIContainer and UIScroll" />
     <MESSAGE value="Updated UIScroll" />
     <MESSAGE value="Updated UIScroll.cs" />
-    <option name="LAST_COMMIT_MESSAGE" value="Updated UIScroll.cs" />
+    <MESSAGE value="Updated to v1.0.8" />
+    <MESSAGE value="Updated dependencies" />
+    <MESSAGE value="Updated UIContainerGroup" />
+    <MESSAGE value="Updated UIContainer.cs" />
+    <MESSAGE value="v1.0.8.5" />
+    <MESSAGE value="Fixed error" />
+    <MESSAGE value="Updated UIContainer" />
+    <MESSAGE value="added delay to uicontainer" />
+    <MESSAGE value="Updated package.json" />
+    <MESSAGE value="Updated version" />
+    <MESSAGE value="Updated version again" />
+    <option name="LAST_COMMIT_MESSAGE" value="Updated version again" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>

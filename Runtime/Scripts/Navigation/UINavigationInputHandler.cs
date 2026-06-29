@@ -1,4 +1,3 @@
-using HelloDev.Logging;
 using HelloDev.UI.Default;
 using HelloDev.UI.Popups;
 using UnityEngine;
@@ -27,7 +26,7 @@ namespace HelloDev.UI.Navigation
 
         [Header("References")]
         [Tooltip("Optional: UIPopupService to check for active popups.")]
-        [SerializeField] private UIPopupService popupService;
+        [SerializeField] private IUIPopupService popupService;
 
         [Header("Debug")]
         [SerializeField] private bool debug;

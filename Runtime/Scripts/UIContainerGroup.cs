@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using HelloDev.Logging;
 using HelloDev.Utils;
 using UnityEngine;
 using UnityEngine.Events;
@@ -89,13 +88,13 @@ namespace HelloDev.UI.Default
         private void OnEnable()
         {
             Container.onShow.SafeSubscribe(OnShow);
-            //if (debug) Debug.Log($"<color=cyan>UIContainerGroup {gameObject.name} enabled</color>", gameObject);
+            //if (debug) Logger.Log($"<color=cyan>UIContainerGroup {gameObject.name} enabled</color>", gameObject);
         }
 
         private void OnDisable()
         {
             Container.onShow.SafeUnsubscribe(OnShow);
-            //if (debug) Debug.Log($"<color=orange>UIContainerGroup {gameObject.name} DISABLED</color>", gameObject);
+            //if (debug) Logger.Log($"<color=orange>UIContainerGroup {gameObject.name} DISABLED</color>", gameObject);
         }
 
         private void Start()
@@ -232,7 +231,7 @@ namespace HelloDev.UI.Default
 
             if (debug)
             {
-                //Debug.Log($"<color=cyan>[UIContainerGroup] ({gameObject.name}) current container {containerToShow.ID}</color>", gameObject);
+                //Logger.Log($"<color=cyan>[UIContainerGroup] ({gameObject.name}) current container {containerToShow.ID}</color>", gameObject);
             }
         }
 

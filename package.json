@@ -11,7 +11,8 @@
   "dependencies": {
     "com.hellodev.utils": "1.0.7",
     "com.unity.textmeshpro": "3.0.0",
-    "com.unity.localization": "1.5.11"
+    "com.unity.localization": "1.5.12",
+    "com.kyrylokuzyk.primetween": "1.4.8"
   },
   "samples": [
     {
@@ -27,7 +28,7 @@
   ],
   "unity": "6000.0",
   "name": "com.hellodev.ui",
-  "version": "1.0.9",
+  "version": "1.1.0",
   "license": "MIT",
   "author": {
     "name": "Hello Dev",

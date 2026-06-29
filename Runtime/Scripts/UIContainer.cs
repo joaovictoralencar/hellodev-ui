@@ -137,7 +137,7 @@ namespace HelloDev.UI.Default
         [Tooltip("Remember last selected element and restore on re-show")]
         [SerializeField] private bool rememberSelection = true;
 
-        [Header("Close")]
+        [Header("ClosePopUp")]
         [SerializeField] private UIButton[] closeButtons;
 
         [Header("Debug")]
@@ -280,9 +280,9 @@ namespace HelloDev.UI.Default
             if (debug)
             {
                 if (Group != null)
-                    Debug.Log($"<color=orange>[UIContainer] Group [{Group.gameObject.name}] started INSTA hiding {gameObject.name}</color>", gameObject);
+                    Logger.Log("UI",$"[UIContainer] Group [{Group.gameObject.name}] started INSTA hiding {gameObject.name}", gameObject);
                 else
-                    Debug.Log($"<color=orange>[UIContainer] ({gameObject.name}) started INSTA hiding</color>", gameObject);
+                    Logger.Log("UI",$"[UIContainer] ({gameObject.name}) started INSTA hiding", gameObject);
             }
 
             if (invokeCallbacks)
@@ -328,7 +328,7 @@ namespace HelloDev.UI.Default
             AutoSelect();
             if (debug && Group != null)
             {
-                Debug.Log($"<color=cyan>[UIContainer] Group [{Group.gameObject.name}] started INSTA SHOW {gameObject.name}</color>", gameObject);
+                Logger.Log("UI",$"[UIContainer] Group [{Group.gameObject.name}] started INSTA SHOW {gameObject.name}", gameObject);
             }
 
             if (invokeCallbacks)
@@ -428,9 +428,9 @@ namespace HelloDev.UI.Default
             if (debug)
             {
                 if (Group != null)
-                    Debug.Log($"<color=cyan>[UIContainer] Group [{Group.gameObject.name}] started opening {gameObject.name}</color>", gameObject);
+                    Logger.Log("UI",$"[UIContainer] Group [{Group.gameObject.name}] started opening {gameObject.name}", gameObject);
                 else
-                    Debug.Log($"<color=cyan>[UIContainer] ({gameObject.name}) started opening</color>", gameObject);
+                    Logger.Log("UI",$"[UIContainer] ({gameObject.name}) started opening", gameObject);
             }
 
             if (invokeCallbacks) onStartShow?.Invoke();
@@ -447,7 +447,7 @@ namespace HelloDev.UI.Default
 
                     if (debug && Group != null)
                     {
-                        Debug.Log($"<color=cyan>UIContainerGroup [{Group.GroupID}] opened {ID}</color>", gameObject);
+                        Logger.Log("UI",$"UIContainerGroup [{Group.GroupID}] opened {ID}", gameObject);
                     }
 
                     if (invokeCallbacks) onShow?.Invoke();
@@ -508,9 +508,9 @@ namespace HelloDev.UI.Default
             if (debug)
             {
                 if (Group != null)
-                    Debug.Log($"<color=orange>[UIContainer] Group [{Group.gameObject.name}] started hiding {gameObject.name}</color>", gameObject);
+                    Logger.Log("UI",$"[UIContainer] Group [{Group.gameObject.name}] started hiding {gameObject.name}", gameObject);
                 else
-                    Debug.Log($"<color=orange>[UIContainer] ({gameObject.name}) started hiding</color>", gameObject);
+                    Logger.Log("UI",$"[UIContainer] ({gameObject.name}) started hiding", gameObject);
             }
 
             if (invokeCallbacks) onStartHide?.Invoke();
@@ -530,7 +530,7 @@ namespace HelloDev.UI.Default
 
                     if (debug && Group != null)
                     {
-                        Debug.Log($"<color=orange>UIContainerGroup [{Group.GroupID}] hid [{ID}]</color>", gameObject);
+                        Logger.Log("UI",$"UIContainerGroup [{Group.GroupID}] hid [{ID}]", gameObject);
                     }
 
                     if (invokeCallbacks) onHide?.Invoke();
@@ -578,7 +578,7 @@ namespace HelloDev.UI.Default
                 if (selectable != null && selectable.interactable)
                 {
                     if (debug)
-                        Debug.Log($"<color=green>[UIContainer] ({gameObject.name}) AutoSelect → restoring: {_lastSelectedObject.name}</color>", gameObject);
+                        Logger.Log("UI",$"[UIContainer] ({gameObject.name}) AutoSelect → restoring: {_lastSelectedObject.name}", gameObject);
 
                     EventSystem.current.SetSelectedGameObject(_lastSelectedObject);
                     return;
@@ -589,13 +589,13 @@ namespace HelloDev.UI.Default
             if (autoSelectable != null && autoSelectable.gameObject.activeInHierarchy && autoSelectable.interactable)
             {
                 if (debug)
-                    Debug.Log($"<color=green>[UIContainer] ({gameObject.name}) AutoSelect → default: {autoSelectable.gameObject.name}</color>", gameObject);
+                    Logger.Log("UI",$"[UIContainer] ({gameObject.name}) AutoSelect → default: {autoSelectable.gameObject.name}", gameObject);
 
                 EventSystem.current.SetSelectedGameObject(autoSelectable.gameObject);
             }
             else if (debug)
             {
-                Debug.Log($"<color=red>[UIContainer] ({gameObject.name}) AutoSelect → no valid selectable found</color>", gameObject);
+                Logger.Log("UI",$"[UIContainer] ({gameObject.name}) AutoSelect → no valid selectable found", gameObject);
             }
         }
 
@@ -647,7 +647,7 @@ namespace HelloDev.UI.Default
             {
                 _lastSelectedObject = selected;
                 if (debug)
-                    Debug.Log($"<color=magenta>[UIContainer] ({gameObject.name}) remembered selection: {selected.name}</color>", gameObject);
+                    Logger.Log("UI",$"[UIContainer] ({gameObject.name}) remembered selection: {selected.name}", gameObject);
             }
         }
 
@@ -658,13 +658,13 @@ namespace HelloDev.UI.Default
         public void HandleBack()
         {
             if (debug)
-                Debug.Log($"<color=yellow>[UIContainer] ({gameObject.name}) HandleBack called</color>", gameObject);
+                Logger.Log("UI",$"[UIContainer] ({gameObject.name}) HandleBack called", gameObject);
 
             // If in a group, delegate to the group's back handling
             if (Group != null)
             {
                 if (debug)
-                    Debug.Log($"<color=yellow>[UIContainer] ({gameObject.name}) → delegating to Group.Back()</color>", gameObject);
+                    Logger.Log("UI",$"[UIContainer] ({gameObject.name}) → delegating to Group.Back()", gameObject);
 
                 Group.Back();
                 return;
@@ -674,7 +674,7 @@ namespace HelloDev.UI.Default
             if (parentContainer != null && parentContainer != this)
             {
                 if (debug)
-                    Debug.Log($"<color=yellow>[UIContainer] ({gameObject.name}) → navigating to parent: {parentContainer.gameObject.name}</color>", gameObject);
+                    Logger.Log("UI",$"[UIContainer] ({gameObject.name}) → navigating to parent: {parentContainer.gameObject.name}", gameObject);
 
                 // Hide first, then show parent (prevents focus conflicts)
                 Hide();
@@ -683,7 +683,7 @@ namespace HelloDev.UI.Default
             else
             {
                 if (debug)
-                    Debug.Log($"<color=yellow>[UIContainer] ({gameObject.name}) → no parent, hiding</color>", gameObject);
+                    Logger.Log("UI",$"[UIContainer] ({gameObject.name}) → no parent, hiding", gameObject);
 
                 // No parent - just hide
                 Hide();
@@ -698,12 +698,12 @@ namespace HelloDev.UI.Default
             if (!IsVisible())
             {
                 if (debug)
-                    Debug.Log($"<color=magenta>[UIContainer] ({gameObject.name}) Focus() called but not visible</color>", gameObject);
+                    Logger.Log("UI",$"[UIContainer] ({gameObject.name}) Focus() called but not visible", gameObject);
                 return;
             }
 
             if (debug)
-                Debug.Log($"<color=magenta>[UIContainer] ({gameObject.name}) Focus() called</color>", gameObject);
+                Logger.Log("UI",$"[UIContainer] ({gameObject.name}) Focus() called", gameObject);
 
             AutoSelect();
         }
