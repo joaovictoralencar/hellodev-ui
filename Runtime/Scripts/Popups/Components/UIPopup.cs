@@ -172,7 +172,7 @@ namespace HelloDev.UI.Popups
         private async Task<GameObject> GetButtonPrefabAsync(PopupButtonData buttonData)
         {
             // 1. Try the button's own addressable reference
-            if (buttonData.PrefabReference.IsValid())
+            if (buttonData.PrefabReference.RuntimeKeyIsValid())
                 return await LoadButtonAssetAsync(buttonData.PrefabReference);
 
             // 2. Try the button's own direct prefab
@@ -180,7 +180,7 @@ namespace HelloDev.UI.Popups
                 return buttonData.Prefab.gameObject;
 
             // 3. Fallback to default addressable reference
-            if (defaultButtonReference.IsValid())
+            if (defaultButtonReference.RuntimeKeyIsValid())
                 return await LoadButtonAssetAsync(defaultButtonReference);
 
             // 4. Final fallback to default direct prefab

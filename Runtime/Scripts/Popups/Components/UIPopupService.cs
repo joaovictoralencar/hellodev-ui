@@ -234,7 +234,7 @@ namespace HelloDev.UI.Popups
                 {
                     prefab = request.Prefab;
                 }
-                else if (request.PrefabReference.IsValid())
+                else if (request.PrefabReference.RuntimeKeyIsValid())
                 {
                     Logging.Logger.LogVerbose("UI.PopUp", "Loading popup prefab from addressables", this);
                     var op = Addressables.LoadAssetAsync<GameObject>(request.PrefabReference);
@@ -247,7 +247,7 @@ namespace HelloDev.UI.Popups
                         return null;
                     }
                 }
-                else if (defaultPrefabReference.IsValid())
+                else if (defaultPrefabReference.RuntimeKeyIsValid())
                 {
                     Logging.Logger.LogVerbose("UI.PopUp", "Loading default addressable prefab", this);
                     var op = Addressables.LoadAssetAsync<GameObject>(defaultPrefabReference);
@@ -303,12 +303,12 @@ namespace HelloDev.UI.Popups
         {
             if (request.Prefab != null)
                 _spawnedPrefabs[request.Prefab] = popup.Id;
-            else if (request.PrefabReference.IsValid())
+            else if (request.PrefabReference.RuntimeKeyIsValid())
                 _spawnedReferences[request.PrefabReference.RuntimeKey.ToString()] = popup.Id;
             else
             {
                 if (defaultPrefab != null) _spawnedPrefabs[defaultPrefab] = popup.Id;
-                if (defaultPrefabReference.IsValid())
+                if (defaultPrefabReference.RuntimeKeyIsValid())
                     _spawnedReferences[defaultPrefabReference.RuntimeKey.ToString()] = popup.Id;
             }
         }
@@ -322,14 +322,14 @@ namespace HelloDev.UI.Popups
             if (request.Prefab != null && _spawnedPrefabs.TryGetValue(request.Prefab, out string id))
                 return id;
 
-            if (request.PrefabReference.IsValid())
+            if (request.PrefabReference.RuntimeKeyIsValid())
             {
                 string key = request.PrefabReference.RuntimeKey.ToString();
                 if (_spawnedReferences.TryGetValue(key, out string idFromRef))
                     return idFromRef;
             }
 
-            if (defaultPrefabReference.IsValid())
+            if (defaultPrefabReference.RuntimeKeyIsValid())
             {
                 string defaultKey = defaultPrefabReference.RuntimeKey.ToString();
                 if (_spawnedReferences.TryGetValue(defaultKey, out string idFromDefaultRef))
