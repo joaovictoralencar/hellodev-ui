@@ -12,14 +12,17 @@ namespace HelloDev.UI.Popups
     /// </summary>
     public class UIPopupService : MonoBehaviour, IUIPopupService
     {
-        [Tooltip("Fallback prefab used if no other prefab is provided.")]
-        [SerializeField] private GameObject defaultPrefab;
-        [Tooltip("Fallback addressable prefab used if no other reference is provided.")]
-        [SerializeField] private AssetReferenceGameObject defaultPrefabReference;
-        [Tooltip("Parent RectTransform under which popups are instantiated.")]
-        [SerializeField] private RectTransform popupContainer;
-        [Tooltip("If true, popups are pooled instead of destroyed.")]
-        [SerializeField] private bool reusePopup = true;
+        [Tooltip("Fallback prefab used if no other prefab is provided.")] [SerializeField]
+        private GameObject defaultPrefab;
+
+        [Tooltip("Fallback addressable prefab used if no other reference is provided.")] [SerializeField]
+        private AssetReferenceGameObject defaultPrefabReference;
+
+        [Tooltip("Parent RectTransform under which popups are instantiated.")] [SerializeField]
+        private RectTransform popupContainer;
+
+        [Tooltip("If true, popups are pooled instead of destroyed.")] [SerializeField]
+        private bool reusePopup = true;
 
         // Queuing
         private readonly Queue<PopupRequest> _queue = new();
@@ -68,7 +71,17 @@ namespace HelloDev.UI.Popups
         /// </summary>
         public Task<IUIPopup> ShowPopup(Popup_SO popupSO, Action<IUIPopup>[] callbacks = null)
         {
-            return ShowPopup(popupSO.Request);
+            if (callbacks == null) return ShowPopup(popupSO.Request);
+            Popup_SO popUpData = Instantiate(popupSO);
+            for (var i = 0; i < popUpData.Request.Buttons.Count; i++)
+            {
+                if (i >= callbacks.Length) break;
+                PopupButtonData requestButton = popUpData.Request.Buttons[i];
+                requestButton.Callback = callbacks[i];
+                popUpData.Request.Buttons[i] = requestButton;
+            }
+
+            return ShowPopup(popUpData.Request);
         }
 
         /// <summary>
