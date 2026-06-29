@@ -81,7 +81,7 @@ namespace HelloDev.UI.Popups
         /// </summary>
         private void BuildContent()
         {
-            if (Request.LocalizedTitle != null)
+            if (!Request.LocalizedTitle.IsEmpty)
             {
                 titleText.StringReference = Request.LocalizedTitle;
                 titleText.gameObject.SetActive(true);
@@ -96,7 +96,7 @@ namespace HelloDev.UI.Popups
                 titleText.gameObject.SetActive(false);
             }
 
-            if (Request.LocalizedMessage != null)
+            if (!Request.LocalizedMessage.IsEmpty)
             {
                 messageText.StringReference = Request.LocalizedMessage;
                 messageText.gameObject.SetActive(true);
@@ -213,8 +213,8 @@ namespace HelloDev.UI.Popups
         /// </summary>
         private void SetButtonLabel(UIButton btn, PopupButtonData buttonData)
         {
-            var buttonText = btn.GetComponentInChildren<TextMeshProUGUI>();
-            var localizeScript = btn.GetComponentInChildren<LocalizeStringEvent>();
+            TextMeshProUGUI buttonText = btn.GetComponentInChildren<TextMeshProUGUI>();
+            LocalizeStringEvent localizeScript = btn.GetComponentInChildren<LocalizeStringEvent>();
 
             if (buttonData.LocalizedLabel != null && localizeScript != null)
                 localizeScript.StringReference = buttonData.LocalizedLabel;
