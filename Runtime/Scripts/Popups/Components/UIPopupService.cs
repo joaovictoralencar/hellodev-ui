@@ -240,7 +240,7 @@ namespace HelloDev.UI.Popups
         private async Task<GameObject> LoadPopupPrefabAsync(PopupRequest request, PopupHandle handle)
         {
             GameObject prefab = null;
-
+            if (!Application.isPlaying) return null;
             try
             {
                 if (request.Prefab != null)
@@ -283,7 +283,7 @@ namespace HelloDev.UI.Popups
                 Logging.Logger.LogError("UI.PopUp", $"Exception while loading popup prefab: {ex.Message}", this);
                 return null;
             }
-
+            if (!Application.isPlaying) return null;
             return prefab;
         }
 
@@ -294,6 +294,7 @@ namespace HelloDev.UI.Popups
         private (IUIPopup popup, GameObject instance) InstantiatePopupInstance(GameObject prefab, Transform parent)
         {
             if (prefab == null) return (null, null);
+            if (!Application.isPlaying) return (null, null);
 
             GameObject go = Instantiate(prefab, parent);
             IUIPopup popup = go.GetComponent<IUIPopup>();
