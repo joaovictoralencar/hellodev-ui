@@ -22,8 +22,8 @@
   },
   "type": "library",
   "dependencies": {
-    "com.unity.textmeshpro": "3.0.6",
-    "com.hellodev.utils": "https://github.com/joaovictoralencar/hellodev-utils.git#v1.0.7"
+    "com.unity.ugui": "1.0.0",
+    "com.hellodev.utils": "https://github.com/joaovictoralencar/hellodev-utils.git#v1.1.0"
   },
   "optionalDependencies": {
     "com.kyrylokuzyk.primetween": ">=1.0.0",

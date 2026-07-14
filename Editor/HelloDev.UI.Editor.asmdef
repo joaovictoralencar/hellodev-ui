@@ -4,7 +4,8 @@
     "references": [
         "HelloDev.UI",
         "HelloDev.Utils",
-        "Unity.TextMeshPro"
+        "Unity.TextMeshPro",
+        "UnityEngine.UI"
     ],
     "includePlatforms": [
         "Editor"

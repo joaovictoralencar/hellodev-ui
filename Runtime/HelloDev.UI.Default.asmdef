@@ -3,6 +3,7 @@
     "rootNamespace": "HelloDev.UI",
     "references": [
         "Unity.TextMeshPro",
+        "UnityEngine.UI",
         "HelloDev.Utils",
         "HelloDev.Loader",
         "Unity.Localization",
