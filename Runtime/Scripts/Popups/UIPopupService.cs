@@ -24,8 +24,8 @@ namespace HelloDev.UI.Popups
         private UIPopup defaultPrefab;
 
 #if UNITY_ADDRESSABLES
-        [Tooltip("Optional addressable reference for popup prefab (used if defaultPrefab is null).")]
-        [SerializeField] private UnityEngine.AddressableAssets.AssetReference popupAddressable;
+        [Tooltip("Optional addressable reference for popup prefab (used if defaultPrefab is null).")] [SerializeField]
+        private UnityEngine.AddressableAssets.AssetReference popupAddressable;
 #endif
 
         [Tooltip("Parent transform for spawned popups.")] [SerializeField]
@@ -37,8 +37,9 @@ namespace HelloDev.UI.Popups
         [SerializeField] private PopupRequestEvent requestEvent;
 #endif
 
-        [Header("Pooling & Debug")]
-        [Tooltip("Enable simple reuse pool for popups (opt-in). ")] [SerializeField] private bool enablePooling = false;
+        [Header("Pooling & Debug")] [Tooltip("Enable simple reuse pool for popups (opt-in). ")] [SerializeField]
+        private bool enablePooling = false;
+
         [SerializeField] private bool debug = false;
 
         #region Private Fields
@@ -250,7 +251,8 @@ namespace HelloDev.UI.Popups
 
             // Determine which prefab to use
             UIPopup prefab = GetPrefab(request);
-#if UNITY_ADDRESSABLESn            bool usingAddressable = prefab == null && _addressablePrefab != null;
+#if UNITY_ADDRESSABLES
+            bool usingAddressable = prefab == null && _addressablePrefab != null;
 #else
             const bool usingAddressable = false;
 #endif
@@ -303,10 +305,12 @@ namespace HelloDev.UI.Popups
             else
             {
                 _currentPopup = popupGO.GetComponent<UIPopup>();
-n                if (_currentPopup == null)
+
+                if (_currentPopup == null)
                 {
                     Logger.LogError(HelloDev.Logging.UIConstants.System, "Instantiated prefab does not have UIPopup component");
-#if UNITY_ADDRESSABLESn                    if (popupGO != null) Destroy(popupGO);
+#if UNITY_ADDRESSABLES
+                    if (popupGO != null) Destroy(popupGO);
 #else
                     Destroy(popupGO);
 #endif
@@ -416,7 +420,14 @@ namespace HelloDev.UI.Popups
         {
             if (popup == null) return;
             // Reset state before pooling to avoid stale data / listeners.
-            try { popup.ResetForReuse(); } catch { }
+            try
+            {
+                popup.ResetForReuse();
+            }
+            catch
+            {
+            }
+
             popup.gameObject.SetActive(false);
             popup.transform.SetParent(transform, false);
             _pool.Add(popup);
@@ -474,4 +485,3 @@ namespace HelloDev.UI.Popups
         #endregion
     }
 }
-

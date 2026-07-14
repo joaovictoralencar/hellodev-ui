@@ -4,6 +4,7 @@
     "references": [
         "Unity.TextMeshPro",
         "HelloDev.Utils",
+        "HelloDev.Loader",
         "Unity.Localization",
         "Unity.Addressables",
         "Unity.ResourceManager"

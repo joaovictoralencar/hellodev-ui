@@ -139,9 +139,11 @@ namespace HelloDev.UI.Default
                 var textColour = rt.GetColour(stateStyle.Text);
                 if (inputField.textComponent != null)
                     inputField.textComponent.color = textColour;
-n                if (inputField.placeholder is TMP_Text ph)
+
+                 if (inputField.placeholder is TMP_Text ph)
                     ph.color = textColour;
-n                try
+
+                 try
                 {
                     inputField.caretColor = textColour;
                 }

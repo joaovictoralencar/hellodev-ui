@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using HelloDev.Loader;
 using Logger = HelloDev.Logging.Logger;
-#if USE_ADDRESSABLES
+#if UNITY_ADDRESSABLES
 using UnityEngine.AddressableAssets;
 using UnityEngine.ResourceManagement.AsyncOperations;
 #endif
@@ -13,37 +13,42 @@ namespace HelloDev.UI.Default
 {
     public class ColorDatabaseRuntime : MonoBehaviour
     {
-        public enum LoadMode { Direct, Resources, Addressables }
+        public enum LoadMode
+        {
+            Direct,
+            Resources,
+            Addressables
+        }
 
-n        [SerializeField] private LoadMode loadMode = LoadMode.Direct;
+        [SerializeField] private LoadMode loadMode = LoadMode.Direct;
         [SerializeField] private ColorDatabase_SO database;
         [SerializeField] private string resourcesPath;
         [SerializeField] private string addressableKey;
         [SerializeField] private string databaseKey = "ColorDatabase";
 
-n        public event Action<string> OnThemeChanged;
+        public event Action<string> OnThemeChanged;
         public event Action<string> OnSlotColorChanged;
 
-n        public ColorDatabase_SO Database => database;
+        public ColorDatabase_SO Database => database;
         public string DatabaseKey => databaseKey;
 
-n        private void Awake()
+        private void Awake()
         {
             StartCoroutine(LoadCoroutine());
         }
 
-n        private IEnumerator LoadCoroutine()create
+        private IEnumerator LoadCoroutine()
         {
             if (loadMode == LoadMode.Direct)
             {
                 if (database == null)
                     Logger.LogWarning(HelloDev.Logging.UIConstants.System, $"[ColorDatabaseRuntime] Direct mode but database is null on {name}");
 
-n                Register();
+                Register();
                 yield break;
             }
 
-n#if USE_ADDRESSABLES
+#if UNITY_ADDRESSABLES
             if (loadMode == LoadMode.Addressables)
             {
                 if (string.IsNullOrEmpty(addressableKey))
@@ -62,11 +67,11 @@ n#if USE_ADDRESSABLES
                     yield break;
                 }
 
-n                Register();
+                Register();
                 yield break;
             }
 #endif
-n            if (loadMode == LoadMode.Resources)
+            if (loadMode == LoadMode.Resources)
             {
                 if (string.IsNullOrEmpty(resourcesPath))
                     Logger.LogWarning(HelloDev.Logging.UIConstants.System, $"[ColorDatabaseRuntime] Resources path is empty on {name}");
@@ -77,19 +82,19 @@ n            if (loadMode == LoadMode.Resources)
                     database = r.asset as ColorDatabase_SO;
                 }
 
-n                Register();
+                Register();
                 yield break;
             }
 
-n            Register();
+            Register();
         }
 
-n        private void Register()
+        private void Register()
         {
             ColorDatabaseLocator.Register(databaseKey, this);
         }
 
-n        public Color GetColor(string slotId)
+        public Color GetColor(string slotId)
         {
             if (database == null)
             {
@@ -97,33 +102,33 @@ n        public Color GetColor(string slotId)
                 return Color.white;
             }
 
-n            return database.GetColorForSlot(slotId);
+            return database.GetColorForSlot(slotId);
         }
 
-n        public void SetActiveTheme(string themeId)
+        public void SetActiveTheme(string themeId)
         {
             if (database == null) return;
             database.ActiveThemeId = themeId;
             OnThemeChanged?.Invoke(themeId);
         }
 
-n        private void OnDestroy()
+        private void OnDestroy()
         {
             ColorDatabaseLocator.Unregister(databaseKey, this);
         }
     }
 
-n    public static class ColorDatabaseLocator
+    public static class ColorDatabaseLocator
     {
         private static readonly Dictionary<string, ColorDatabaseRuntime> _services = new Dictionary<string, ColorDatabaseRuntime>();
 
-n        public static void Register(string key, ColorDatabaseRuntime service)
+        public static void Register(string key, ColorDatabaseRuntime service)
         {
             if (string.IsNullOrEmpty(key)) key = "ColorDatabase";
             _services[key] = service;
         }
 
-n        public static void Unregister(string key, ColorDatabaseRuntime service)
+        public static void Unregister(string key, ColorDatabaseRuntime service)
         {
             if (_services.TryGetValue(key, out var existing) && existing == service)
             {
@@ -131,7 +136,7 @@ n        public static void Unregister(string key, ColorDatabaseRuntime service)
             }
         }
 
-n        public static ColorDatabaseRuntime Get(string key)
+        public static ColorDatabaseRuntime Get(string key)
         {
             if (string.IsNullOrEmpty(key)) key = "ColorDatabase";
             _services.TryGetValue(key, out var service);
@@ -139,4 +144,3 @@ n        public static ColorDatabaseRuntime Get(string key)
         }
     }
 }
-
