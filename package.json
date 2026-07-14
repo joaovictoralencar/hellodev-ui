@@ -1,8 +1,9 @@
 {
   "name": "com.hellodev.ui",
   "displayName": "HelloDev UI",
-  "version": "2.0.0",
-  "unity": "2021.3",
+  "version": "2.1.0",
+  "unity": "6000.0",
+  "unityRelease": "0f1",
   "description": "Modular UI package for Unity. Provides a data-driven color-theme system, customizable selectables (button, toggle, input field), popup management, and optional InputSystem navigation. Designed for both designers and programmers.",
   "keywords": [
     "ui",
@@ -16,12 +17,13 @@
   ],
   "author": {
     "name": "HelloDev",
+    "email": "hello@hellodev.com",
     "url": "https://github.com/joaovictoralencar"
   },
-  "license": "MIT",
+  "type": "library",
   "dependencies": {
     "com.unity.textmeshpro": "3.0.6",
-    "com.hellodev.utils": "https://github.com/joaovictoralencar/hellodev-utils.git#v1.0.1"
+    "com.hellodev.utils": "https://github.com/joaovictoralencar/hellodev-utils.git#v1.0.7"
   },
   "optionalDependencies": {
     "com.kyrylokuzyk.primetween": ">=1.0.0",
