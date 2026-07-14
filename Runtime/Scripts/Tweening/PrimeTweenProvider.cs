@@ -13,13 +13,14 @@ namespace HelloDev.UI.Tweening
     {
         #region Transform Tweens
 
-        public ITweenHandle Scale(Transform target, Vector3 endValue, float duration)
+        public ITweenHandle Scale(Transform target, Vector3 endValue, float duration, float delay = 0)
         {
+            // PrimeTween API doesn't accept delay on creation; ignore or handle externally
             var tween = Tween.Scale(target, endValue, duration);
             return new PrimeTweenHandle(tween);
         }
 
-        public ITweenHandle Scale(Transform target, float endValue, float duration)
+        public ITweenHandle Scale(Transform target, float endValue, float duration, float delay = 0)
         {
             var tween = Tween.Scale(target, endValue, duration);
             return new PrimeTweenHandle(tween);
@@ -29,19 +30,19 @@ namespace HelloDev.UI.Tweening
 
         #region Graphic/UI Tweens
 
-        public ITweenHandle Fade(Graphic target, float endValue, float duration)
+        public ITweenHandle Fade(Graphic target, float endValue, float duration, float delay = 0)
         {
             var tween = Tween.Alpha(target, endValue, duration);
             return new PrimeTweenHandle(tween);
         }
 
-        public ITweenHandle Fade(CanvasGroup target, float endValue, float duration)
+        public ITweenHandle Fade(CanvasGroup target, float endValue, float duration, float delay = 0)
         {
             var tween = Tween.Alpha(target, endValue, duration);
             return new PrimeTweenHandle(tween);
         }
 
-        public ITweenHandle FillAmount(Image target, float endValue, float duration)
+        public ITweenHandle FillAmount(Image target, float endValue, float duration, float delay = 0)
         {
             var tween = Tween.UIFillAmount(target, endValue, duration);
             return new PrimeTweenHandle(tween);
