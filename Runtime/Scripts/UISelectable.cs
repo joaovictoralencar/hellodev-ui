@@ -30,9 +30,10 @@ namespace HelloDev.UI.Default
         [SerializeField] protected SelectableState currentState;
         [SerializeField] protected bool debugMode = false;
 
+        [Tooltip("For scale on hover animation, don't touch if not used"), SerializeField] 
+        protected Vector3 originalScale = Vector3.one;
         public SelectableState CurrentState => currentState;
 
-        protected Vector3 originalScale;
         protected bool selected;
         protected bool mouseOver;
         protected bool pointerDown;
@@ -73,7 +74,6 @@ namespace HelloDev.UI.Default
 
         protected virtual void Awake()
         {
-            originalScale = transform.localScale;
             _colourStyle = GetComponent<UIColourStyle>();
             InitializeState();
         }

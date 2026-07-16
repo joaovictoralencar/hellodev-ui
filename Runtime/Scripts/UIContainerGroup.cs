@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using HelloDev.Logging;
 using HelloDev.Utils;
 using UnityEngine;
 using UnityEngine.Events;
@@ -42,8 +41,18 @@ namespace HelloDev.UI.Default
         private UIContainer currentContainer;
         private Canvas canvas;
         private CanvasGroup canvasGroup;
+        public UIContainer container;
 
-        public UIContainer Container { get; private set; }
+        public UIContainer Container
+        {
+            get
+            {
+                if (container == null) TryGetComponent(out container);
+                return container;
+            }
+            private set => container = value;
+        }
+
         public List<UIContainer> Containers => containers;
         public UIContainer CurrentContainer => currentContainer;
         public Canvas Canvas => canvas;
@@ -79,13 +88,13 @@ namespace HelloDev.UI.Default
         private void OnEnable()
         {
             Container.onShow.SafeSubscribe(OnShow);
-            //if (debug) Debug.Log($"<color=cyan>UIContainerGroup {gameObject.name} enabled</color>", gameObject);
+            //if (debug) Logger.Log($"<color=cyan>UIContainerGroup {gameObject.name} enabled</color>", gameObject);
         }
 
         private void OnDisable()
         {
             Container.onShow.SafeUnsubscribe(OnShow);
-            //if (debug) Debug.Log($"<color=orange>UIContainerGroup {gameObject.name} DISABLED</color>", gameObject);
+            //if (debug) Logger.Log($"<color=orange>UIContainerGroup {gameObject.name} DISABLED</color>", gameObject);
         }
 
         private void Start()
@@ -168,7 +177,7 @@ namespace HelloDev.UI.Default
             }
 
             // Make sure the group container is shown
-            if (!Container.IsVisible()) Container.InstaShow(false, false);
+            if (!Container.IsVisible()) Container.InstaShow(Container.Group != null, false);
 
             if (keepOneOpen)
             {
@@ -188,7 +197,6 @@ namespace HelloDev.UI.Default
                     // After all are hidden, show the requested container
                     ShowContainerInternal(containerToShow, instant, onShow);
                 }, alsoHideChildren);
-                ShowContainerInternal(containerToShow, instant, onShow);
 
                 // HideAll(instant, containerToShow, () =>
                 // {
@@ -206,7 +214,7 @@ namespace HelloDev.UI.Default
         private void ShowContainerInternal(UIContainer containerToShow, bool instant, Action onShow)
         {
             // Ensure group container is visible
-            if (!Container.IsVisible()) Container.InstaShow();
+            if (!Container.IsVisible()) Container.InstaShow(Container.Group != null);
 
             // Show the requested container
             if (instant)
@@ -223,7 +231,7 @@ namespace HelloDev.UI.Default
 
             if (debug)
             {
-                //Debug.Log($"<color=cyan>[UIContainerGroup] ({gameObject.name}) current container {containerToShow.ID}</color>", gameObject);
+                //Logger.Log($"<color=cyan>[UIContainerGroup] ({gameObject.name}) current container {containerToShow.ID}</color>", gameObject);
             }
         }
 
@@ -288,7 +296,7 @@ namespace HelloDev.UI.Default
             // For instant hide, just hide them all immediately
             if (instant)
             {
-                foreach (var container in containers.Where(container => container.IsVisible() && container != containerToShow))
+                foreach (var container in containers.Where(container => container != containerToShow))
                 {
                     container.InstaHide(true);
                     if (!alsoHideChildren) continue;

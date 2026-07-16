@@ -11,9 +11,7 @@ namespace HelloDev.UI.Tweening
     {
         [Tooltip("If true, this GameObject won't be destroyed when loading a new scene.")]
         [SerializeField] private bool dontDestroyOnLoad = true;
-
-        private bool _isOwner;
-
+        
         private void Awake()
         {
             if (TweenService.IsConfigured)
@@ -23,7 +21,6 @@ namespace HelloDev.UI.Tweening
             }
 
             TweenService.SetProvider(new PrimeTweenProvider());
-            _isOwner = true;
 
             if (dontDestroyOnLoad)
             {
@@ -33,7 +30,8 @@ namespace HelloDev.UI.Tweening
 
         private void OnDestroy()
         {
-            if (_isOwner)
+            // Only clear if we're the active initializer
+            if (TweenService.Provider is PrimeTweenProvider && TweenService.Provider == this)
             {
                 TweenService.ClearProvider();
             }

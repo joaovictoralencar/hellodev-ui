@@ -22,6 +22,16 @@ namespace HelloDev.UI.Default
         #endregion
 
         #region Serialized Fields
+        
+        [Header("Scrollbar Handle Size")]
+        [Tooltip("When enabled, prevents Unity from auto-resizing the scrollbar handle based on content ratio.")]
+        [SerializeField] private bool fixedScrollbarSize = false;
+
+        [Tooltip("When enabled, uses the explicit size below instead of capturing the value set on the Scrollbar component at startup.")]
+        [SerializeField] private bool overrideHandleSize = false;
+
+        [Tooltip("The fixed handle size to enforce when Override is enabled. Normalized 0–1.")]
+        [SerializeField, Range(0f, 1f)] private float fixedHandleSize = 0.2f;
 
         [Header("Auto-Scroll to Selection")]
         [Tooltip("When enabled, the scroll view will automatically scroll to show selected items.")]
@@ -49,6 +59,11 @@ namespace HelloDev.UI.Default
         private RectTransform _viewport;
         private RectTransform _content;
         private Coroutine _currentTween;
+        
+        private Scrollbar _verticalScrollbar;
+        private Scrollbar _horizontalScrollbar;
+        private float _capturedVerticalSize;
+        private float _capturedHorizontalSize;
 
         #endregion
 
@@ -64,6 +79,38 @@ namespace HelloDev.UI.Default
 
         #endregion
 
+#if UNITY_EDITOR
+        private void OnValidate()
+        {
+            if (!fixedScrollbarSize || !overrideHandleSize) return;
+
+            UnityEditor.EditorApplication.delayCall -= ApplyFixedHandleSize;
+            UnityEditor.EditorApplication.delayCall += ApplyFixedHandleSize;
+        }
+
+        private void ApplyFixedHandleSize()
+        {
+            if (this == null) return;
+
+            UnityEditor.EditorApplication.delayCall -= ApplyFixedHandleSize;
+            if (_scrollRect == null)
+                _scrollRect = GetComponent<ScrollRect>();
+
+            if (_scrollRect.verticalScrollbar != null)
+                _scrollRect.verticalScrollbar.size = fixedHandleSize;
+
+            if (_scrollRect.horizontalScrollbar != null)
+                _scrollRect.horizontalScrollbar.size = fixedHandleSize;
+        }
+#endif
+
+        protected virtual void OnDestroy()
+        {
+            #if UNITY_EDITOR
+            UnityEditor.EditorApplication.delayCall -= ApplyFixedHandleSize;
+            #endif
+        }
+
         #region Unity Lifecycle
 
         private void Awake()
@@ -71,13 +118,38 @@ namespace HelloDev.UI.Default
             _scrollRect = GetComponent<ScrollRect>();
             _viewport   = _scrollRect.viewport ?? GetComponent<RectTransform>();
             _content    = _scrollRect.content;
+            
+            if (fixedScrollbarSize)
+            {
+                _verticalScrollbar   = _scrollRect.verticalScrollbar;
+                _horizontalScrollbar = _scrollRect.horizontalScrollbar;
+
+                // Auto-capture mode: read and lock whatever the designer set in the editor.
+                // Override mode: the explicit fixedHandleSize field is used at enforce time instead.
+                if (!overrideHandleSize)
+                {
+                    if (_verticalScrollbar != null)
+                        _capturedVerticalSize = _verticalScrollbar.size;
+
+                    if (_horizontalScrollbar != null)
+                        _capturedHorizontalSize = _horizontalScrollbar.size;
+                }
+            }
         }
 
-        private void OnEnable()  => OnSelectableSelected += HandleSelectionChanged;
+        private void OnEnable()
+        {
+            OnSelectableSelected += HandleSelectionChanged;
+            if (fixedScrollbarSize)
+                Canvas.willRenderCanvases += EnforceScrollbarSize;
+        }
+
         private void OnDisable()
         {
             OnSelectableSelected -= HandleSelectionChanged;
             StopCurrentTween();
+            if (fixedScrollbarSize)
+                Canvas.willRenderCanvases -= EnforceScrollbarSize;
         }
 
         #endregion
@@ -124,6 +196,27 @@ namespace HelloDev.UI.Default
         #endregion
 
         #region Private Methods
+        
+        /// <summary>
+        /// Called by Unity's canvas pipeline before each render.
+        /// Restores the handle size that Unity overwrites during its layout pass.
+        /// </summary>
+        private void EnforceScrollbarSize()
+        {
+            if (_verticalScrollbar != null)
+            {
+                _verticalScrollbar.size = overrideHandleSize
+                    ? fixedHandleSize
+                    : _capturedVerticalSize;
+            }
+
+            if (_horizontalScrollbar != null)
+            {
+                _horizontalScrollbar.size = overrideHandleSize
+                    ? fixedHandleSize
+                    : _capturedHorizontalSize;
+            }
+        }
 
         private void ScrollToItemVertical(RectTransform item)
         {

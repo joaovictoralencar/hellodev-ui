@@ -1,12 +1,12 @@
 using System;
 using System.Collections.Generic;
-using HelloDev.Logging;
 using HelloDev.Tweening;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
 using Logger = HelloDev.Logging.Logger;
+using HelloDev.UI.Tweening;
 
 namespace HelloDev.UI.Default
 {
@@ -120,6 +120,8 @@ namespace HelloDev.UI.Default
         [Header("Animation Settings")]
         [SerializeField] private float openDuration = 0.3f;
         [SerializeField] private float hideDuration = 0.3f;
+        [SerializeField] private float hideDelay = 0;
+        [SerializeField] private float showDelay = 0;
         public EaseType openEase = EaseType.OutQuad;
         public EaseType hideEase = EaseType.InQuad;
         [SerializeField] private bool unscaledTime = false;
@@ -134,7 +136,7 @@ namespace HelloDev.UI.Default
         [Tooltip("Remember last selected element and restore on re-show")]
         [SerializeField] private bool rememberSelection = true;
 
-        [Header("Close")]
+        [Header("ClosePopUp")]
         [SerializeField] private UIButton[] closeButtons;
 
         [Header("Debug")]
@@ -147,7 +149,21 @@ namespace HelloDev.UI.Default
         public UnityEvent onStartShow;
 
         #region Properties
+        
+        ITweenProvider Provider
+        {
+            get { 
+                if (TweenService.Provider.GetType() == NullTweenProvider.Instance.GetType())
+                {
+                    var provider = new PrimeTweenProvider();
+                    TweenService.SetProvider(provider);
+                    return provider;
+                }
 
+                return TweenService.Provider;
+            }
+        }
+        
         public float OpenDuration => openDuration;
         public float HideDuration => hideDuration;
         public UIContainerGroup Group { get; private set; }
@@ -171,6 +187,12 @@ namespace HelloDev.UI.Default
         private Action pendingShowCallback = null;
         private GameObject _lastSelectedObject;
 
+        // Tracks settled visibility state manually.
+        // True only after a show animation completes or InstaShow runs.
+        // False after hide completes, InstaHide, or external deactivation via OnDisable.
+        // NOT true during animations — use IsAnimating() for that.
+        private bool _isVisible = false;
+
         #endregion
 
         protected virtual void Awake()
@@ -192,10 +214,28 @@ namespace HelloDev.UI.Default
         {
             switch (onStartAction)
             {
-                case StartAction.InstaHide: InstaHide(); break;
-                case StartAction.InstaShow: InstaShow(); break;
-                case StartAction.Hide: Hide(); break;
-                case StartAction.Show: Show(); break;
+                case StartAction.InstaHide:
+                {
+                    InstaHide();
+                    break;
+                }
+                case StartAction.InstaShow:
+                {
+                    if (Group) Group.ShowContainer(this, true);
+                    else InstaShow();
+                    break;
+                }
+                case StartAction.Hide:
+                {
+                    Hide();
+                    break;
+                }
+                case StartAction.Show:
+                {
+                    if (Group) Group.ShowContainer(this);
+                    else Show();
+                    break;
+                }
             }
         }
 
@@ -210,9 +250,6 @@ namespace HelloDev.UI.Default
         {
             KillAnimation();
 
-            if (!gameObject.activeSelf && !invokeCallbacks)
-                return;
-
             if (Group && !fromGroup)
             {
                 Logger.LogWarning(HelloDev.Logging.UIConstants.System, "This container has a group. Use group methods to hide it instead.");
@@ -224,6 +261,9 @@ namespace HelloDev.UI.Default
 
             // Remove from active containers
             _activeContainers.Remove(this);
+
+            // Mark as hidden before SetActive(false) so OnDisable doesn't race
+            _isVisible = false;
 
             // Apply hidden state
             CanvasGroup.alpha = 0f;
@@ -239,9 +279,9 @@ namespace HelloDev.UI.Default
             if (debug)
             {
                 if (Group != null)
-                    Debug.Log($"<color=orange>[UIContainer] Group [{Group.gameObject.name}] started INSTA hiding {gameObject.name}</color>", gameObject);
+                    Logger.Log("UI",$"[UIContainer] Group [{Group.gameObject.name}] started INSTA hiding {gameObject.name}", gameObject);
                 else
-                    Debug.Log($"<color=orange>[UIContainer] ({gameObject.name}) started INSTA hiding</color>", gameObject);
+                    Logger.Log("UI",$"[UIContainer] ({gameObject.name}) started INSTA hiding", gameObject);
             }
 
             if (invokeCallbacks)
@@ -260,13 +300,13 @@ namespace HelloDev.UI.Default
             // Cancel any pending animations
             KillAnimation();
 
-            // If we're already visible and callbacks aren't needed, skip
-            if (gameObject.activeSelf && CanvasGroup.alpha == 1f && !invokeCallbacks && onShowCallback == null)
+            // If we're already settled-visible and callbacks aren't needed, skip
+            if (_isVisible && !invokeCallbacks && onShowCallback == null)
                 return;
 
             if (Group && !fromGroup)
             {
-                Logger.LogWarning(HelloDev.Logging.UIConstants.System, "This container has a group. Use group methods to show it instead.");
+                Logger.LogWarning(HelloDev.Logging.UIConstants.System, $"This container [{ID}] has a group {Group.GroupID}. Use group methods to show it instead.");
                 return;
             }
 
@@ -277,6 +317,9 @@ namespace HelloDev.UI.Default
             CanvasGroup.interactable = true;
             CanvasGroup.blocksRaycasts = true;
 
+            // Settled: fully visible, no animation
+            _isVisible = true;
+
             // Add to active containers
             if (!_activeContainers.Contains(this))
                 _activeContainers.Add(this);
@@ -284,7 +327,7 @@ namespace HelloDev.UI.Default
             AutoSelect();
             if (debug && Group != null)
             {
-                Debug.Log($"<color=cyan>[UIContainer] Group [{Group.gameObject.name}] started INSTA SHOW {gameObject.name}</color>", gameObject);
+                Logger.Log("UI",$"[UIContainer] Group [{Group.gameObject.name}] started INSTA SHOW {gameObject.name}", gameObject);
             }
 
             if (invokeCallbacks)
@@ -301,12 +344,12 @@ namespace HelloDev.UI.Default
             pendingShowCallback = null;
         }
 
-        private void OnEnable()
+        protected virtual void OnEnable()
         {
-            //if (debug) Debug.Log($"<color=cyan>UIContainer {gameObject.name} enabled</color>", gameObject);
-
-            // Check if we have a pending show
-            if (hasPendingShow)
+            // Check if we have a pending show.
+            // Guard: if already visible (e.g. GO was re-enabled externally while settled),
+            // skip to avoid re-triggering show callbacks unnecessarily.
+            if (hasPendingShow && !_isVisible)
             {
                 Show(Group != null, true, pendingShowCallback);
                 hasPendingShow = false;
@@ -314,22 +357,27 @@ namespace HelloDev.UI.Default
             }
         }
 
-        private void OnDisable()
+        protected virtual void OnDisable()
         {
-            //if (debug) Debug.Log($"<color=orange>UIContainer {gameObject.name} DISABLED</color>", gameObject);
-
             // If we have an animation in progress, kill it
             KillAnimation();
+
+            // Handle external deactivation (e.g. parent GO disabled, scene unload).
+            // InstaHide sets this before calling SetActive(false), so this is a no-op
+            // in the normal flow but catches any external disable.
+            if (_isVisible) hasPendingShow = true;
+            _isVisible = false;
         }
 
         public void ShowContainer(bool invokeCallbacks = true)
         {
-            Show(false, invokeCallbacks, null);
+            if (Group != null) Group.ShowContainer(this);
+            else Show(Group != null, invokeCallbacks, null);
         }
 
         public void HideContainer(bool invokeCallbacks = true)
         {
-            Hide(false, invokeCallbacks);
+            Hide(Group != null, invokeCallbacks);
         }
 
         public void Show(bool fromGroup = false, bool invokeCallbacks = true, Action onShowCallback = null)
@@ -337,13 +385,19 @@ namespace HelloDev.UI.Default
             // Kill any existing animation
             KillAnimation();
             
-            // If gameobject is disabled, store as pending and exit
-            if (!gameObject.activeInHierarchy)
+            // GO is inactive or canvas disabled — can't tween yet.
+            // Queue as pending: OnEnable will resume once the GO is active.
+            // Note: this is intentionally NOT checking _isVisible, because a hide animation
+            // interrupted by KillAnimation() leaves the GO active but _isVisible = false.
+            // In that case we want to fall through and animate directly, not re-queue.
+            if (!gameObject.activeSelf || !Canvas.enabled)
             {
+				gameObject.SetActive(false);
                 hasPendingShow = true;
                 pendingInstant = false;
+                Canvas.enabled = true;
                 pendingShowCallback = onShowCallback;
-
+                
                 // Enable the gameObject to trigger OnEnable where we'll resume
                 gameObject.SetActive(true);
                 if (invokeCallbacks) onStartShow?.Invoke();
@@ -355,8 +409,6 @@ namespace HelloDev.UI.Default
                 Logger.LogWarning(HelloDev.Logging.UIConstants.System, "This container has a group. Use group methods to show it instead.");
                 return;
             }
-
-  
 
             // Set animation in progress flag
             animationInProgress = true;
@@ -375,23 +427,26 @@ namespace HelloDev.UI.Default
             if (debug)
             {
                 if (Group != null)
-                    Debug.Log($"<color=cyan>[UIContainer] Group [{Group.gameObject.name}] started opening {gameObject.name}</color>", gameObject);
+                    Logger.Log("UI",$"[UIContainer] Group [{Group.gameObject.name}] started opening {gameObject.name}", gameObject);
                 else
-                    Debug.Log($"<color=cyan>[UIContainer] ({gameObject.name}) started opening</color>", gameObject);
+                    Logger.Log("UI",$"[UIContainer] ({gameObject.name}) started opening", gameObject);
             }
 
             if (invokeCallbacks) onStartShow?.Invoke();
             // Start fade in animation
-            fadeTween = TweenService.Provider.Fade(CanvasGroup, 1f, openDuration)
+            fadeTween = Provider.Fade(CanvasGroup, 1f, openDuration, showDelay)
                 .SetEase(openEase)
                 .SetUpdate(unscaledTime)
                 .OnComplete(() =>
                 {
                     animationInProgress = false;
 
+                    // Settled: animation done, container is fully visible
+                    _isVisible = true;
+
                     if (debug && Group != null)
                     {
-                        Debug.Log($"<color=cyan>UIContainerGroup [{Group.GroupID}] opened {ID}</color>", gameObject);
+                        Logger.Log("UI",$"UIContainerGroup [{Group.GroupID}] opened {ID}", gameObject);
                     }
 
                     if (invokeCallbacks) onShow?.Invoke();
@@ -412,10 +467,11 @@ namespace HelloDev.UI.Default
             // Kill any existing animation
             KillAnimation();
             
-            // If not active, just call callbacks if needed
-            if (!gameObject.activeInHierarchy)
+            // Not in a settled-visible state — nothing animated to hide.
+            // InstaHide cleans up any partial state (alpha, canvas, GO active).
+            if (!_isVisible)
             {
-                if (invokeCallbacks) onHide?.Invoke();
+                InstaHide(fromGroup, invokeCallbacks);
                 return;
             }
 
@@ -451,26 +507,29 @@ namespace HelloDev.UI.Default
             if (debug)
             {
                 if (Group != null)
-                    Debug.Log($"<color=orange>[UIContainer] Group [{Group.gameObject.name}] started hiding {gameObject.name}</color>", gameObject);
+                    Logger.Log("UI",$"[UIContainer] Group [{Group.gameObject.name}] started hiding {gameObject.name}", gameObject);
                 else
-                    Debug.Log($"<color=orange>[UIContainer] ({gameObject.name}) started hiding</color>", gameObject);
+                    Logger.Log("UI",$"[UIContainer] ({gameObject.name}) started hiding", gameObject);
             }
 
             if (invokeCallbacks) onStartHide?.Invoke();
             // Start fade out animation
-            fadeTween = TweenService.Provider.Fade(CanvasGroup, 0f, hideDuration)
+            fadeTween = Provider.Fade(CanvasGroup, 0f, hideDuration, hideDelay)
                 .SetEase(hideEase)
                 .SetUpdate(unscaledTime)
                 .OnComplete(() =>
                 {
                     animationInProgress = false;
 
+                    // Settled: animation done, container is fully hidden
+                    _isVisible = false;
+
                     Canvas.enabled = false;
                     gameObject.SetActive(false);
 
                     if (debug && Group != null)
                     {
-                        Debug.Log($"<color=orange>UIContainerGroup [{Group.GroupID}] hid [{ID}]</color>", gameObject);
+                        Logger.Log("UI",$"UIContainerGroup [{Group.GroupID}] hid [{ID}]", gameObject);
                     }
 
                     if (invokeCallbacks) onHide?.Invoke();
@@ -518,7 +577,7 @@ namespace HelloDev.UI.Default
                 if (selectable != null && selectable.interactable)
                 {
                     if (debug)
-                        Debug.Log($"<color=green>[UIContainer] ({gameObject.name}) AutoSelect → restoring: {_lastSelectedObject.name}</color>", gameObject);
+                        Logger.Log("UI",$"[UIContainer] ({gameObject.name}) AutoSelect → restoring: {_lastSelectedObject.name}", gameObject);
 
                     EventSystem.current.SetSelectedGameObject(_lastSelectedObject);
                     return;
@@ -529,20 +588,22 @@ namespace HelloDev.UI.Default
             if (autoSelectable != null && autoSelectable.gameObject.activeInHierarchy && autoSelectable.interactable)
             {
                 if (debug)
-                    Debug.Log($"<color=green>[UIContainer] ({gameObject.name}) AutoSelect → default: {autoSelectable.gameObject.name}</color>", gameObject);
+                    Logger.Log("UI",$"[UIContainer] ({gameObject.name}) AutoSelect → default: {autoSelectable.gameObject.name}", gameObject);
 
                 EventSystem.current.SetSelectedGameObject(autoSelectable.gameObject);
             }
             else if (debug)
             {
-                Debug.Log($"<color=red>[UIContainer] ({gameObject.name}) AutoSelect → no valid selectable found</color>", gameObject);
+                Logger.Log("UI",$"[UIContainer] ({gameObject.name}) AutoSelect → no valid selectable found", gameObject);
             }
         }
 
-        public bool IsVisible()
-        {
-            return gameObject.activeSelf && Canvas.enabled && CanvasGroup.alpha > 0 && !IsAnimating();
-        }
+        /// <summary>
+        /// Returns true only when the container has fully settled into a visible state
+        /// (show animation completed or InstaShow ran). False during animations, while
+        /// hidden, or while pending activation.
+        /// </summary>
+        public bool IsVisible() => _isVisible;
 
         public bool IsAnimating()
         {
@@ -585,7 +646,7 @@ namespace HelloDev.UI.Default
             {
                 _lastSelectedObject = selected;
                 if (debug)
-                    Debug.Log($"<color=magenta>[UIContainer] ({gameObject.name}) remembered selection: {selected.name}</color>", gameObject);
+                    Logger.Log("UI",$"[UIContainer] ({gameObject.name}) remembered selection: {selected.name}", gameObject);
             }
         }
 
@@ -596,13 +657,13 @@ namespace HelloDev.UI.Default
         public void HandleBack()
         {
             if (debug)
-                Debug.Log($"<color=yellow>[UIContainer] ({gameObject.name}) HandleBack called</color>", gameObject);
+                Logger.Log("UI",$"[UIContainer] ({gameObject.name}) HandleBack called", gameObject);
 
             // If in a group, delegate to the group's back handling
             if (Group != null)
             {
                 if (debug)
-                    Debug.Log($"<color=yellow>[UIContainer] ({gameObject.name}) → delegating to Group.Back()</color>", gameObject);
+                    Logger.Log("UI",$"[UIContainer] ({gameObject.name}) → delegating to Group.Back()", gameObject);
 
                 Group.Back();
                 return;
@@ -612,7 +673,7 @@ namespace HelloDev.UI.Default
             if (parentContainer != null && parentContainer != this)
             {
                 if (debug)
-                    Debug.Log($"<color=yellow>[UIContainer] ({gameObject.name}) → navigating to parent: {parentContainer.gameObject.name}</color>", gameObject);
+                    Logger.Log("UI",$"[UIContainer] ({gameObject.name}) → navigating to parent: {parentContainer.gameObject.name}", gameObject);
 
                 // Hide first, then show parent (prevents focus conflicts)
                 Hide();
@@ -621,7 +682,7 @@ namespace HelloDev.UI.Default
             else
             {
                 if (debug)
-                    Debug.Log($"<color=yellow>[UIContainer] ({gameObject.name}) → no parent, hiding</color>", gameObject);
+                    Logger.Log("UI",$"[UIContainer] ({gameObject.name}) → no parent, hiding", gameObject);
 
                 // No parent - just hide
                 Hide();
@@ -636,12 +697,12 @@ namespace HelloDev.UI.Default
             if (!IsVisible())
             {
                 if (debug)
-                    Debug.Log($"<color=magenta>[UIContainer] ({gameObject.name}) Focus() called but not visible</color>", gameObject);
+                    Logger.Log("UI",$"[UIContainer] ({gameObject.name}) Focus() called but not visible", gameObject);
                 return;
             }
 
             if (debug)
-                Debug.Log($"<color=magenta>[UIContainer] ({gameObject.name}) Focus() called</color>", gameObject);
+                Logger.Log("UI",$"[UIContainer] ({gameObject.name}) Focus() called", gameObject);
 
             AutoSelect();
         }
