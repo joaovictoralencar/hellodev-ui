@@ -17,18 +17,17 @@
   ],
   "author": {
     "name": "HelloDev",
-    "email": "hello.dev.tecnologia@gmail.com",
-    "url": "https://github.com/joaovictoralencar"
+    "url": "https://github.com/joaovictoralencar",
+    "email": "hello.dev.tecnologia@gmail.com"
   },
   "type": "library",
   "dependencies": {
     "com.unity.ugui": "1.0.0",
-    "com.hellodev.utils": "https://github.com/joaovictoralencar/hellodev-utils.git#v1.1.0"
-  },
-  "optionalDependencies": {
-    "com.kyrylokuzyk.primetween": ">=1.0.0",
-    "com.unity.inputsystem": ">=1.0.0",
-    "com.unity.localization": ">=1.0.0",
-    "com.unity.addressables": ">=1.19.19"
+    "com.hellodev.utils": "1.1.0",
+    "com.hellodev.loaders": "1.1.0",
+    "com.kyrylokuzyk.primetween": "1.0.0",
+    "com.unity.inputsystem": "1.0.0",
+    "com.unity.localization": "1.0.0",
+    "com.unity.addressables": "1.19.19"
   }
 }
