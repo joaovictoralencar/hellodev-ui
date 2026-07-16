@@ -6,7 +6,6 @@ using UnityEngine.Events;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
 using Logger = HelloDev.Logging.Logger;
-using HelloDev.UI.Tweening;
 
 namespace HelloDev.UI.Default
 {
@@ -155,9 +154,8 @@ namespace HelloDev.UI.Default
             get { 
                 if (TweenService.Provider.GetType() == NullTweenProvider.Instance.GetType())
                 {
-                    var provider = new PrimeTweenProvider();
-                    TweenService.SetProvider(provider);
-                    return provider;
+                    Logger.LogError(Logging.UIConstants.System, $"TweenService.Provider is not configured. Please add a TweenServiceInitializer to your scene.");
+                    return null;
                 }
 
                 return TweenService.Provider;
