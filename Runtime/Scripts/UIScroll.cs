@@ -141,7 +141,16 @@ namespace HelloDev.UI.Default
         {
             OnSelectableSelected += HandleSelectionChanged;
             if (fixedScrollbarSize)
-                Canvas.willRenderCanvases += EnforceScrollbarSize;
+            {
+                _scrollRect.onValueChanged.AddListener(HandleScrollValueChanged);
+                Canvas.willRenderCanvases += EnforceScrollbarSizeOnce; // catches the initial rebuild
+            }
+        }
+
+        private void EnforceScrollbarSizeOnce()
+        {
+            Canvas.willRenderCanvases -= EnforceScrollbarSizeOnce;
+            EnforceScrollbarSize();
         }
 
         private void OnDisable()
@@ -149,8 +158,10 @@ namespace HelloDev.UI.Default
             OnSelectableSelected -= HandleSelectionChanged;
             StopCurrentTween();
             if (fixedScrollbarSize)
-                Canvas.willRenderCanvases -= EnforceScrollbarSize;
+                _scrollRect.onValueChanged.RemoveListener(HandleScrollValueChanged);
         }
+
+        private void HandleScrollValueChanged(Vector2 _) => EnforceScrollbarSize();
 
         #endregion
 
