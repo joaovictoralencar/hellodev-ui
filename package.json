@@ -1,7 +1,7 @@
 {
   "name": "com.hellodev.ui",
   "displayName": "HelloDev UI",
-  "version": "2.2.1",
+  "version": "2.2.2",
   "unity": "6000.0",
   "unityRelease": "0f1",
   "description": "Modular UI package for Unity. Provides a data-driven color-theme system, customizable selectables (button, toggle, input field), popup management, and optional InputSystem navigation. Designed for both designers and programmers.",
@@ -23,7 +23,7 @@
   "type": "library",
   "dependencies": {
     "com.unity.ugui": "1.0.0",
-    "com.hellodev.utils": "1.1.0",
+    "com.hellodev.utils": "1.1.1",
     "com.hellodev.loaders": "1.1.0",
     "com.kyrylokuzyk.primetween": "1.0.0",
     "com.unity.inputsystem": "1.0.0",
