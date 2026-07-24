@@ -3,9 +3,9 @@
     "rootNamespace": "HelloDev.UI.Navigation",
     "references": [
         "GUID:7e6c3289b8e4a6b4485b1ef51f2da0da",
-        "GUID:b2ec0e10f25b56f40a55b9974a3bb62f",
         "GUID:75469ad4d38634e559750d17036d5f7c",
-        "GUID:1924f21e807566945b9552b7bd19f10a"
+        "GUID:1924f21e807566945b9552b7bd19f10a",
+        "GUID:07668497c187c9c46a487d106686cddb"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
