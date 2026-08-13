@@ -269,6 +269,11 @@ namespace HelloDev.UI.Default
             }
         }
 
+        public void Select()
+        {
+            EventSystem.current?.SetSelectedGameObject(gameObject); 
+        }
+
         // ── Overridable ──────────────────────────────────────────────────────────
 
         public abstract void SetInteractable(bool interactable);

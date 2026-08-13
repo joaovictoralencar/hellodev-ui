@@ -59,7 +59,7 @@ namespace HelloDev.UI.Default
                             else
                                 Logger.LogError(HelloDev.Logging.UIConstants.System, $"[UIThemeRuntime] Failed to load addressable on '{name}'");
                             Register();
-                        });
+                        }).Forget();
                     yield break;
                 }
 #else

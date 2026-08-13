@@ -63,7 +63,7 @@ namespace HelloDev.UI.Default
                             else
                                 Logger.LogError(HelloDev.Logging.UIConstants.System, $"[ColorDatabaseRuntime] Failed to load addressable '{addressableKey}'");
                             Register();
-                        });
+                        }).Forget();
                     yield break;
                 }
 
