@@ -38,6 +38,8 @@ namespace HelloDev.UI.Default
                     _toggle.isOn = value;
             }
         }
+        
+        public Toggle Toggle => _toggle;
 
         public Toggle.ToggleEvent OnValueChanged
         {
