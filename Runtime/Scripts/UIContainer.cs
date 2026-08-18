@@ -7,6 +7,10 @@ using UnityEngine.UI;
 using UnityEngine.EventSystems;
 using Logger = HelloDev.Logging.Logger;
 
+#if ODIN_INSPECTOR
+using Sirenix.OdinInspector;
+#endif
+
 namespace HelloDev.UI.Default
 {
     /// <summary>
@@ -88,6 +92,9 @@ namespace HelloDev.UI.Default
 
         #endregion
 
+#if ODIN_INSPECTOR
+        [FoldoutGroup("UIContainer Settings")]
+#endif
         public string ID;
 
 #if UNITY_EDITOR
@@ -107,44 +114,106 @@ namespace HelloDev.UI.Default
         }
 
         [Header("Navigation")]
+#if ODIN_INSPECTOR
+        [FoldoutGroup("UIContainer Settings")]
+#endif
         [Tooltip("Button that triggers Cancel/Back behavior")]
         [SerializeField] private UIButton backButton;
 
+#if ODIN_INSPECTOR
+        [FoldoutGroup("UIContainer Settings")]
+#endif
         [Tooltip("Container to focus when Cancel/Back is pressed (null = hide this container)")]
         [SerializeField] private UIContainer parentContainer;
 
         [Header("Start Action")]
+#if ODIN_INSPECTOR
+        [FoldoutGroup("UIContainer Settings")]
+#endif
         public StartAction onStartAction = StartAction.DoNothing;
 
         [Header("Animation Settings")]
+#if ODIN_INSPECTOR
+        [FoldoutGroup("UIContainer Settings")]
+#endif
         [SerializeField] private float openDuration = 0.3f;
+#if ODIN_INSPECTOR
+        [FoldoutGroup("UIContainer Settings")]
+#endif
         [SerializeField] private float hideDuration = 0.3f;
+#if ODIN_INSPECTOR
+        [FoldoutGroup("UIContainer Settings")]
+#endif
         [SerializeField] private float hideDelay = 0;
+#if ODIN_INSPECTOR
+        [FoldoutGroup("UIContainer Settings")]
+#endif
         [SerializeField] private float showDelay = 0;
+#if ODIN_INSPECTOR
+        [FoldoutGroup("UIContainer Settings")]
+#endif
         public EaseType openEase = EaseType.OutQuad;
+#if ODIN_INSPECTOR
+        [FoldoutGroup("UIContainer Settings")]
+#endif
         public EaseType hideEase = EaseType.InQuad;
+#if ODIN_INSPECTOR
+        [FoldoutGroup("UIContainer Settings")]
+#endif
         [SerializeField] private bool unscaledTime = false;
+#if ODIN_INSPECTOR
+        [FoldoutGroup("UIContainer Settings")]
+#endif
+        [Tooltip("If true, fade animations are skipped and show/hide is instant.")]
+        [SerializeField] private bool disableFadeAnimation = false;
 
         [Header("Interaction Settings")]
+#if ODIN_INSPECTOR
+        [FoldoutGroup("UIContainer Settings")]
+#endif
         public bool disableInteractionsWhenHidden = true;
 
         [Header("Auto-Select Settings")]
+#if ODIN_INSPECTOR
+        [FoldoutGroup("UIContainer Settings")]
+#endif
         [Tooltip("Selectable to focus when this container is shown")]
         public Selectable autoSelectable;
 
+#if ODIN_INSPECTOR
+        [FoldoutGroup("UIContainer Settings")]
+#endif
         [Tooltip("Remember last selected element and restore on re-show")]
         [SerializeField] private bool rememberSelection = true;
 
         [Header("ClosePopUp")]
+#if ODIN_INSPECTOR
+        [FoldoutGroup("UIContainer Settings")]
+#endif
         [SerializeField] private UIButton[] closeButtons;
 
         [Header("Debug")]
+#if ODIN_INSPECTOR
+        [FoldoutGroup("UIContainer Settings")]
+#endif
         [SerializeField] internal bool debug = false;
 
         [Header("Callbacks")]
+#if ODIN_INSPECTOR
+        [FoldoutGroup("UIContainer Settings")]
+#endif
         public UnityEvent onShow;
+#if ODIN_INSPECTOR
+        [FoldoutGroup("UIContainer Settings")]
+#endif
         public UnityEvent onHide;
+#if ODIN_INSPECTOR
+        [FoldoutGroup("UIContainer Settings")]
+#endif
         public UnityEvent onStartHide;
+#if ODIN_INSPECTOR
+        [FoldoutGroup("UIContainer Settings")]
+#endif
         public UnityEvent onStartShow;
 
         #region Properties
@@ -416,7 +485,7 @@ namespace HelloDev.UI.Default
             Canvas.enabled = true;
             CanvasGroup.interactable = true;
             CanvasGroup.blocksRaycasts = true;
-            CanvasGroup.alpha = 0;
+            CanvasGroup.alpha = disableFadeAnimation ? 1f : 0f;
 
             // Add to active containers immediately (so Cancel works during animation)
             if (!_activeContainers.Contains(this))
@@ -431,6 +500,25 @@ namespace HelloDev.UI.Default
             }
 
             if (invokeCallbacks) onStartShow?.Invoke();
+
+            // If fade animation is disabled, complete immediately
+            if (disableFadeAnimation)
+            {
+                animationInProgress = false;
+                _isVisible = true;
+                if (debug && Group != null)
+                {
+                    Logger.Log("UI",$"UIContainerGroup [{Group.GroupID}] opened {ID} (instant)", gameObject);
+                }
+                if (invokeCallbacks) onShow?.Invoke();
+                onShowCallback?.Invoke();
+                AutoSelect();
+
+                // No pending hide can exist during instant show
+                hasPendingHide = false;
+                return;
+            }
+
             // Start fade in animation
             fadeTween = Provider.Fade(CanvasGroup, 1f, openDuration, showDelay)
                 .SetEase(openEase)
@@ -511,6 +599,27 @@ namespace HelloDev.UI.Default
             }
 
             if (invokeCallbacks) onStartHide?.Invoke();
+
+            // If fade animation is disabled, complete immediately
+            if (disableFadeAnimation)
+            {
+                CanvasGroup.alpha = 0f;
+                Canvas.enabled = false;
+                gameObject.SetActive(false);
+                animationInProgress = false;
+                _isVisible = false;
+                if (debug && Group != null)
+                {
+                    Logger.Log("UI",$"UIContainerGroup [{Group.GroupID}] hid [{ID}] (instant)", gameObject);
+                }
+                if (invokeCallbacks) onHide?.Invoke();
+
+                // No pending show can exist during instant hide
+                hasPendingShow = false;
+                pendingShowCallback = null;
+                return;
+            }
+
             // Start fade out animation
             fadeTween = Provider.Fade(CanvasGroup, 0f, hideDuration, hideDelay)
                 .SetEase(hideEase)

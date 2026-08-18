@@ -2,18 +2,33 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
+#if ODIN_INSPECTOR
+using Sirenix.OdinInspector;
+#endif
+
 namespace HelloDev.UI.Default
 {
     [RequireComponent(typeof(Button))]
     public class UIButton : UISelectable
     {
+        #region Serialized Fields
+
+#if ODIN_INSPECTOR
+        [FoldoutGroup("Button Settings")]
+#endif
         [SerializeField] protected bool DeselectOnClick;
+
+#if ODIN_INSPECTOR
+        [FoldoutGroup("Button Settings")]
+#endif
         [SerializeField] protected Button _button;
 
-        // Implement the Interactable property
+        #endregion
+
+        #region Properties
+
         public override bool IsInteractable => _button && _button.interactable;
 
-        // Expose the button's onClick event
         public Button.ButtonClickedEvent OnClick
         {
             get
@@ -23,14 +38,16 @@ namespace HelloDev.UI.Default
             }
         }
 
+        #endregion
+
+        #region Lifecycle
+
         protected override void Awake()
         {
-            // Ensure button is assigned
-            if (_button == null) 
+            if (_button == null)
                 _button = GetComponent<Button>();
             EndPressing.AddListener(OnEndPressing);
-            
-            // Call base Awake
+
             base.Awake();
         }
 
@@ -40,6 +57,10 @@ namespace HelloDev.UI.Default
             EndPressing.RemoveListener(OnEndPressing);
         }
 
+        #endregion
+
+        #region Private Methods
+
         private void OnEndPressing()
         {
             if (!DeselectOnClick) return;
@@ -47,7 +68,10 @@ namespace HelloDev.UI.Default
                 EventSystem.current.SetSelectedGameObject(null);
         }
 
-        // Implementation of SetInteractable
+        #endregion
+
+        #region Overrides
+
         public override void SetInteractable(bool interactable)
         {
             if (_button == null) return;
@@ -57,30 +81,16 @@ namespace HelloDev.UI.Default
             if (!interactable)
                 ChangeState(SelectableState.Disabled);
             else
-                ChangeState(mouseOver ? SelectableState.Highlighted : SelectableState.Normal);
+                ChangeState(IsHighlighted ? SelectableState.Highlighted : SelectableState.Normal);
         }
 
-        // Optional debug text update (if needed)
-        protected override void UpdateDebugText()
-        {
-            // Debug logging disabled in production
-        }
+        protected override void UpdateDebugText() { }
 
-        // Optional state-specific visual or behavioral modifications
-        protected override void OnNormalState()
-        {
-        }
+        protected override void OnNormalState()      { }
+        protected override void OnHighlightedState() { }
+        protected override void OnPressedState()     { }
+        protected override void OnDisabledState()    { }
 
-        protected override void OnHighlightedState()
-        {
-        }
-
-        protected override void OnPressedState()
-        {
-        }
-
-        protected override void OnDisabledState()
-        {
-        }
+        #endregion
     }
 }

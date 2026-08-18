@@ -1,73 +1,112 @@
-using HelloDev.Utils;
-using HelloDev.Logging;
 using UnityEngine;
-using TMPro;
-using UnityEngine.Events;
-using Logger = HelloDev.Logging.Logger;
+using UnityEngine.EventSystems;
+using UnityEngine.UI;
+
+#if ODIN_INSPECTOR
+using Sirenix.OdinInspector;
+#endif
 
 namespace HelloDev.UI.Default
 {
-    [RequireComponent(typeof(TMP_InputField))]
-    public class UIInputField : UISelectable
+    [RequireComponent(typeof(InputField))]
+    public class UIInput : UISelectable
     {
-        [SerializeField] protected TMP_InputField _inputField;
+        #region Serialized Fields
 
-        // Events for input field interactions
-        public UnityEvent<string> OnTextChanged = new();
-        public UnityEvent<string> OnEndEdit = new();
+#if ODIN_INSPECTOR
+        [FoldoutGroup("Input Settings")]
+#endif
+        [SerializeField] protected InputField _inputField;
 
-        // Implement the Interactable property
+#if ODIN_INSPECTOR
+        [FoldoutGroup("Input Settings")]
+#endif
+        [SerializeField] protected bool DeselectOnSubmit;
+
+        #endregion
+
+        #region Properties
+
         public override bool IsInteractable => _inputField && _inputField.interactable;
 
-        // Properties to access input field state
-        public string Text => _inputField ? _inputField.text : string.Empty;
-        public bool IsFocused => _inputField && _inputField.isFocused;
+        public string Text
+        {
+            get => _inputField ? _inputField.text : string.Empty;
+            set
+            {
+                if (_inputField)
+                    _inputField.text = value;
+            }
+        }
+
+        public InputField.OnChangeEvent OnValueChanged
+        {
+            get
+            {
+                if (_inputField == null) _inputField = GetComponent<InputField>();
+                return _inputField ? _inputField.onValueChanged : null;
+            }
+        }
+
+        // Correct type: EndEditEvent, not SubmitEvent
+        public InputField.EndEditEvent OnEndEdit
+        {
+            get
+            {
+                if (_inputField == null) _inputField = GetComponent<InputField>();
+                return _inputField ? _inputField.onEndEdit : null;
+            }
+        }
+
+        #endregion
+
+        #region Lifecycle
 
         protected override void Awake()
         {
             if (_inputField == null)
-                _inputField = GetComponent<TMP_InputField>();
+                _inputField = GetComponent<InputField>();
 
-            // UIColourStyle.Awake() auto-discovers the background Graphic via GetComponent,
-            // which finds the TMP_InputField's targetGraphic automatically.
+            if (_inputField != null)
+            {
+                _inputField.onEndEdit.AddListener(HandleEndEdit);
+            }
 
-            if (_inputField)
-            {
-                _inputField.onValueChanged.SafeSubscribe(HandleTextChanged);
-                _inputField.onEndEdit.SafeSubscribe(HandleEndEdit);
-                _inputField.onSelect.SafeSubscribe(HandleSelect);
-                _inputField.onDeselect.SafeSubscribe(HandleDeselect);
-            }
-            else
-            {
-                Logger.LogWarning(HelloDev.Logging.UIConstants.System, $"[UIInputField] TMP_InputField component missing on '{name}'. Input functionality will be limited.");
-            }
+            EndPressing.AddListener(OnEndPressing);
 
             base.Awake();
         }
 
-        private void HandleTextChanged(string newText)
+        protected override void OnDestroy()
         {
-            OnTextChanged?.Invoke(newText);
-            UpdateState();
+            base.OnDestroy();
+
+            if (_inputField != null)
+                _inputField.onEndEdit.RemoveListener(HandleEndEdit);
+
+            EndPressing.RemoveListener(OnEndPressing);
         }
 
-        private void HandleEndEdit(string finalText)
+        #endregion
+
+        #region Private Methods
+
+        private void HandleEndEdit(string value)
         {
-            OnEndEdit?.Invoke(finalText);
+            // Optionally handle submit logic (e.g., deselect, call custom events).
         }
 
-        private void HandleSelect(string selectedText)
+        private void OnEndPressing()
         {
-            ChangeState(SelectableState.Selected);
+            if (!DeselectOnSubmit) return;
+            if (EventSystem.current.currentSelectedGameObject == gameObject)
+                EventSystem.current.SetSelectedGameObject(null);
         }
 
-        private void HandleDeselect(string deselectedText)
-        {
-            ChangeState(SelectableState.Normal);
-        }
+        #endregion
 
-        // Implementation of SetInteractable
+        #region Overrides
+
         public override void SetInteractable(bool interactable)
         {
             if (_inputField == null) return;
@@ -77,55 +116,22 @@ namespace HelloDev.UI.Default
             if (!interactable)
                 ChangeState(SelectableState.Disabled);
             else
-                ChangeState(mouseOver ? SelectableState.Highlighted : SelectableState.Normal);
+                ChangeState(IsHighlighted ? SelectableState.Highlighted : SelectableState.Normal);
         }
 
-        // Methods to interact with input field
-        public void SetText(string text)
-        {
-            if (_inputField)
-            {
-                _inputField.text = text;
-            }
-            else
-            {
-                Logger.LogWarning(HelloDev.Logging.UIConstants.System, $"[UIInputField] SetText called but TMP_InputField missing on '{name}'");
-            }
-        }
-
-        public void ActivateInputField()
-        {
-            if (_inputField)
-                _inputField.ActivateInputField();
-        }
-
-        protected override void OnNormalState()
-        {
-        }
-
+        // Input fields may want to stay highlighted while focused.
         protected override void OnSelectedState()
         {
+            // Keep the selected state but also allow visual distinction if needed.
         }
 
-        protected override void OnHighlightedState()
-        {
-        }
+        protected override void UpdateDebugText() { }
 
-        protected override void OnDisabledState()
-        {
-        }
+        protected override void OnNormalState()      { }
+        protected override void OnHighlightedState() { }
+        protected override void OnPressedState()     { }
+        protected override void OnDisabledState()    { }
 
-        // Clean up listeners when object is destroyed
-        protected override void OnDestroy()
-        {
-            base.OnDestroy();
-            if (_inputField)
-            {
-                _inputField.onValueChanged.SafeUnsubscribe(HandleTextChanged);
-                _inputField.onEndEdit.SafeUnsubscribe(HandleEndEdit);
-                _inputField.onSelect.SafeUnsubscribe(HandleSelect);
-                _inputField.onDeselect.SafeUnsubscribe(HandleDeselect);
-            }
-        }
+        #endregion
     }
 }

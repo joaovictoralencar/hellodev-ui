@@ -3,6 +3,8 @@ using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.EventSystems;
 using HelloDev.Tweening;
+using UnityEngine.UI;
+
 #if ODIN_INSPECTOR
 using Sirenix.OdinInspector;
 #endif
@@ -27,39 +29,108 @@ namespace HelloDev.UI.Default
             Disabled
         }
 
+        #region Serialized Fields
+
+#if ODIN_INSPECTOR
+        [FoldoutGroup("Selectable Settings")]
+#endif
         [SerializeField] protected SelectableState currentState;
+
+#if ODIN_INSPECTOR
+        [FoldoutGroup("Selectable Settings")]
+#endif
         [SerializeField] protected bool debugMode = false;
 
-        [Tooltip("For scale on hover animation, don't touch if not used"), SerializeField] 
-        protected Vector3 originalScale = Vector3.one;
+#if ODIN_INSPECTOR
+        [FoldoutGroup("Selectable Settings")]
+#endif
+        [Tooltip("For scale on hover animation, don't touch if not used")]
+        [SerializeField] protected Vector3 originalScale = Vector3.one;
+
+#if ODIN_INSPECTOR
+        [FoldoutGroup("Selectable Settings")]
+#endif
+        [Tooltip("If true, the selectable will be selected (receive focus) when the pointer hovers over it.")]
+        [SerializeField] private bool selectOnHighlight = false;
+
+#if ODIN_INSPECTOR
+        [FoldoutGroup("Selectable Settings")]
+#endif
+        [Tooltip("Optional reference to the underlying Unity Selectable. If not set, will be auto-detected.")]
+        [SerializeField] private Selectable targetSelectable;
+
+        #endregion
+
+        #region Events
+
+#if ODIN_INSPECTOR
+        [FoldoutGroup("Selectable Events")]
+#endif
+        public UnityEvent NormalStateEvent = new();
+
+#if ODIN_INSPECTOR
+        [FoldoutGroup("Selectable Events")]
+#endif
+        public UnityEvent SelectedStateEvent = new();
+
+#if ODIN_INSPECTOR
+        [FoldoutGroup("Selectable Events")]
+#endif
+        public UnityEvent HighlightedStateEvent = new();
+
+#if ODIN_INSPECTOR
+        [FoldoutGroup("Selectable Events")]
+#endif
+        public UnityEvent PressedStateEvent = new();
+
+#if ODIN_INSPECTOR
+        [FoldoutGroup("Selectable Events")]
+#endif
+        public UnityEvent DisabledStateEvent = new();
+
+#if ODIN_INSPECTOR
+        [FoldoutGroup("Selectable Events")]
+#endif
+        public UnityEvent<SelectableState> ChangedStateEvent = new();
+
+#if ODIN_INSPECTOR
+        [FoldoutGroup("Selectable Events")]
+#endif
+        public UnityEvent EndPressing = new UnityEvent();
+
+        #endregion
+
+        #region Properties
+
         public SelectableState CurrentState => currentState;
 
+        /// <summary>
+        /// Cached reference to the underlying Unity Selectable component, if any.
+        /// </summary>
+        protected Selectable TargetSelectable => targetSelectable;
+
+        /// <summary>
+        /// Convenience property for child classes – true if the selectable is currently highlighted.
+        /// </summary>
+        protected bool IsHighlighted => targetSelectable != null && targetSelectable.IsHighlighted();
+
         protected bool selected;
-        protected bool mouseOver;
-        protected bool pointerDown;
 
-        // ── Events ───────────────────────────────────────────────────────────────
+        #endregion
 
-        public UnityEvent NormalStateEvent     = new();
-        public UnityEvent SelectedStateEvent   = new();
-        public UnityEvent HighlightedStateEvent = new();
-        public UnityEvent PressedStateEvent    = new();
-        public UnityEvent DisabledStateEvent   = new();
-        public UnityEvent<SelectableState> ChangedStateEvent = new();
-        public UnityEvent EndPressing { get; } = new UnityEvent();
-
-        // ── Optional components ──────────────────────────────────────────────────
+        #region Private Fields
 
         private UIColourStyle _colourStyle;
+        private bool _lastInteractable;
+        private ITweenHandle _scaleTween;
+        private Coroutine _scaleCoroutine;
+        private Coroutine _pressStateCoroutine;
 
-        /// <summary>Public accessor for attached UIColourStyle. Controls should rely on the central style application in UpdateState()</summary>
-        public UIColourStyle ColourStyle => _colourStyle;
+        #endregion
 
-        // ── Lifecycle ────────────────────────────────────────────────────────────
+        #region Lifecycle
 
         public abstract bool IsInteractable { get; }
-
-        private bool _lastInteractable;
 
 #if ODIN_INSPECTOR
         [Button]
@@ -75,6 +146,8 @@ namespace HelloDev.UI.Default
         protected virtual void Awake()
         {
             _colourStyle = GetComponent<UIColourStyle>();
+            if (targetSelectable == null)
+                targetSelectable = GetComponent<Selectable>();
             InitializeState();
         }
 
@@ -103,7 +176,9 @@ namespace HelloDev.UI.Default
             UpdateState();
         }
 
-        // ── State machine ────────────────────────────────────────────────────────
+        #endregion
+
+        #region State Machine
 
         protected void ChangeState(SelectableState newState)
         {
@@ -144,10 +219,9 @@ namespace HelloDev.UI.Default
             if (debugMode) UpdateDebugText();
         }
 
-        // ── Scale animation ──────────────────────────────────────────────────────
+        #endregion
 
-        private ITweenHandle _scaleTween;
-        private Coroutine    _scaleCoroutine;
+        #region Scale Animation
 
         private void ApplyScaleAnimation(SelectableState state)
         {
@@ -156,9 +230,8 @@ namespace HelloDev.UI.Default
             if (!style.ScaleOnSelect) return;
 
             bool enlarged = state == SelectableState.Selected || state == SelectableState.Highlighted;
-            var  target   = enlarged ? Vector3.one * style.ScaledSize : originalScale;
+            var target = enlarged ? Vector3.one * style.ScaledSize : originalScale;
 
-            // Skip the tween if we're already at the target scale — avoids a PrimeTween warning.
             if (transform.localScale == target) return;
 
             float duration = style.ScaleTime;
@@ -176,14 +249,23 @@ namespace HelloDev.UI.Default
 
         private void KillScaleTween()
         {
-            if (_scaleTween != null) { _scaleTween.Kill(); _scaleTween = null; }
-            if (_scaleCoroutine != null) { StopCoroutine(_scaleCoroutine); _scaleCoroutine = null; }
-            if (TweenService.IsConfigured) TweenService.Provider.Kill(transform);
+            if (_scaleTween != null)
+            {
+                _scaleTween.Kill();
+                _scaleTween = null;
+            }
+            if (_scaleCoroutine != null)
+            {
+                StopCoroutine(_scaleCoroutine);
+                _scaleCoroutine = null;
+            }
+            if (TweenService.IsConfigured)
+                TweenService.Provider.Kill(transform);
         }
 
         private IEnumerator LerpScale(Vector3 target, float duration)
         {
-            var start   = transform.localScale;
+            var start = transform.localScale;
             float elapsed = 0f;
             while (elapsed < duration)
             {
@@ -195,7 +277,9 @@ namespace HelloDev.UI.Default
             _scaleCoroutine = null;
         }
 
-        // ── Event system handlers ────────────────────────────────────────────────
+        #endregion
+
+        #region Event System Handlers
 
         public virtual void OnSelect(BaseEventData eventData)
         {
@@ -206,48 +290,68 @@ namespace HelloDev.UI.Default
 
         public virtual void OnDeselect(BaseEventData eventData)
         {
-            ChangeState(mouseOver ? SelectableState.Highlighted : SelectableState.Normal);
             selected = false;
+            // If the pointer is still over the selectable and it's interactable, highlight it.
+            if (IsHighlighted && IsInteractable)
+                ChangeState(SelectableState.Highlighted);
+            else
+                ChangeState(SelectableState.Normal);
         }
 
         public virtual void OnPointerEnter(PointerEventData eventData)
         {
-            mouseOver = true;
             if (!IsInteractable) return;
+
             ChangeState(SelectableState.Highlighted);
+
+            // Optionally select the object when hovered.
+            if (selectOnHighlight && !selected)
+                Select();
         }
 
         public virtual void OnPointerExit(PointerEventData eventData)
         {
-            mouseOver = false;
-            if (currentState == SelectableState.Pressed || !IsInteractable) return;
-            ChangeState(selected ? SelectableState.Selected : SelectableState.Normal);
+            if (!IsInteractable) return;
+
+            // If still being pressed (e.g., pointer dragged outside), wait for pointer up.
+            if (targetSelectable != null && targetSelectable.IsPressed()) return;
+
+            if (selected)
+                ChangeState(SelectableState.Selected);
+            else
+                ChangeState(SelectableState.Normal);
         }
 
         public virtual void OnPointerDown(PointerEventData eventData)
         {
             if (!IsInteractable) return;
             ChangeState(SelectableState.Pressed);
-            pointerDown = true;
         }
 
         public virtual void OnPointerUp(PointerEventData eventData)
         {
-            if (IsInteractable)
-                ChangeState(SelectableState.Selected);
-            pointerDown = false;
-        }
+            if (!IsInteractable) return;
 
-        private Coroutine _pressStateCoroutine;
+            if (selected)
+                ChangeState(SelectableState.Selected);
+            else if (IsHighlighted)
+                ChangeState(SelectableState.Highlighted);
+            else
+                ChangeState(SelectableState.Normal);
+        }
 
         public virtual void OnSubmit(BaseEventData eventData)
         {
-            if (mouseOver && pointerDown) return;
+            // Ignore submit if already pressed via pointer.
+            if (targetSelectable != null && targetSelectable.IsPressed() && targetSelectable.IsHighlighted())
+                return;
+
             if (_pressStateCoroutine != null)
             {
                 StopCoroutine(_pressStateCoroutine);
                 _pressStateCoroutine = null;
             }
+
             ChangeState(SelectableState.Pressed);
             _pressStateCoroutine = StartCoroutine(ReturnToSelectedState());
         }
@@ -257,10 +361,16 @@ namespace HelloDev.UI.Default
             try
             {
                 yield return new WaitForSeconds(0.1f);
-                if (gameObject.activeInHierarchy && selected)
-                    ChangeState(SelectableState.Selected);
-                else if (gameObject.activeInHierarchy)
-                    ChangeState(mouseOver ? SelectableState.Highlighted : SelectableState.Normal);
+
+                if (gameObject.activeInHierarchy)
+                {
+                    if (selected)
+                        ChangeState(SelectableState.Selected);
+                    else if (IsHighlighted)
+                        ChangeState(SelectableState.Highlighted);
+                    else
+                        ChangeState(SelectableState.Normal);
+                }
                 EndPressing?.Invoke();
             }
             finally
@@ -271,10 +381,12 @@ namespace HelloDev.UI.Default
 
         public void Select()
         {
-            EventSystem.current?.SetSelectedGameObject(gameObject); 
+            EventSystem.current?.SetSelectedGameObject(gameObject);
         }
 
-        // ── Overridable ──────────────────────────────────────────────────────────
+        #endregion
+
+        #region Abstract and Virtual Methods
 
         public abstract void SetInteractable(bool interactable);
 
@@ -286,11 +398,12 @@ namespace HelloDev.UI.Default
         protected virtual void OnPressedState()     { }
         protected virtual void OnDisabledState()    { }
 
+        #endregion
+
 #if UNITY_EDITOR
         protected virtual void OnValidate()
         {
             if (Application.isPlaying) return;
-            // Refresh the colour style preview in edit mode
             _colourStyle = GetComponent<UIColourStyle>();
             _colourStyle?.Apply(currentState);
         }
